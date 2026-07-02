@@ -32,7 +32,7 @@ const fmt = (iso: string | null) =>
 
 const mapRow = (r: Row): Withdrawal => ({
   orderNo: r.order_no,
-  playerID: r.player_id.slice(0, 8),
+  playerID: r.player_id,
   level: r.level ?? "NORMAL",
   sourceUserId: r.source_user_id ?? "",
   channelCode: r.channel_code ?? "",
