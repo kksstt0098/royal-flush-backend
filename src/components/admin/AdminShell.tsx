@@ -78,6 +78,15 @@ const groups: NavGroup[] = [
       { key: "quickRecharge", page: "quickRecharge" },
     ],
   },
+  {
+    key: "adsBanner",
+    label: "adsBanner",
+    icon: Megaphone,
+    children: [
+      { key: "lobbyBanner", page: "lobbyBanner" },
+      { key: "promoBanner", page: "promoBanner" },
+    ],
+  },
 ];
 
 export function AdminShell({
