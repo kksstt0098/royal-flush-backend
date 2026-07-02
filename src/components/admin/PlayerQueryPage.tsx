@@ -122,7 +122,23 @@ export function PlayerQueryPage() {
       if (f.payed === "no" && p.totalPayed > 0) return false;
       if (f.phone && !p.phone.includes(f.phone.trim())) return false;
       if (f.email && !p.email.toLowerCase().includes(f.email.trim().toLowerCase())) return false;
+      if (
+        f.ipAddr &&
+        !(
+          (p.registerIp ?? "").includes(f.ipAddr.trim()) ||
+          (p.loginIp ?? "").includes(f.ipAddr.trim())
+        )
+      )
+        return false;
+      if (f.level && p.level !== f.level) return false;
       if (f.channelCode && p.channelCode !== f.channelCode.trim()) return false;
+      if (f.vipFrom && p.vip < Number(f.vipFrom)) return false;
+      if (f.vipTo && p.vip > Number(f.vipTo)) return false;
+      if (
+        f.bankAccount &&
+        !(p.addr ?? "").toLowerCase().includes(f.bankAccount.trim().toLowerCase())
+      )
+        return false;
       if (f.status && p.status !== f.status) return false;
       const created = parseTblDate(p.createTime);
       if (f.regFrom && created && created < new Date(f.regFrom)) return false;
