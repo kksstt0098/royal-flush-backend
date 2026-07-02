@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useT } from "@/lib/i18n";
-import { mockWithdrawals, type Withdrawal, type WithdrawalStatus } from "@/lib/mock-withdrawals";
+import { type Withdrawal, type WithdrawalStatus } from "@/lib/mock-withdrawals";
+import { useWithdrawals, updateWithdrawal } from "@/lib/withdrawal-store";
 import { mockPlayers } from "@/lib/mock-players";
 import { OrderDetailsModal } from "./OrderDetailsModal";
 import {
@@ -109,7 +110,7 @@ export function WithdrawalOrderPage() {
   const { t } = useT();
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [applied, setApplied] = useState<Filters>(emptyFilters);
-  const [rows, setRows] = useState<Withdrawal[]>(mockWithdrawals);
+  const rows = useWithdrawals();
   const [activeTab, setActiveTab] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
@@ -242,7 +243,7 @@ export function WithdrawalOrderPage() {
   };
 
   const updateRow = (orderNo: string, patch: Partial<Withdrawal>) =>
-    setRows((rs) => rs.map((r) => (r.orderNo === orderNo ? { ...r, ...patch } : r)));
+    updateWithdrawal(orderNo, patch);
 
   const levels = useMemo(() => Array.from(new Set(mockWithdrawals.map((w) => w.level))), []);
   const payoutModes = useMemo(
