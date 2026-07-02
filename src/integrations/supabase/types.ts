@@ -441,6 +441,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_adjust_player: {
+        Args: { _amount: number; _player_id: string; _remark: string }
+        Returns: string
+      }
       admin_credit_player: {
         Args: {
           _amount: number
