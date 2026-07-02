@@ -59,7 +59,7 @@ export function QuickRechargePage() {
         _player_id: pid,
         _amount: amountNum,
         _credit_type: creditType,
-        _remark: remark || null,
+        _remark: remark || "",
       });
       out.push({
         playerId: pid,
