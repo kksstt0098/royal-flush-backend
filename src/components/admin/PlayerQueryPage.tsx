@@ -66,7 +66,12 @@ type Filters = {
   payed: "" | "yes" | "no";
   phone: string;
   email: string;
+  ipAddr: string;
+  level: string;
   channelCode: string;
+  vipFrom: string;
+  vipTo: string;
+  bankAccount: string;
   status: "" | "active" | "disabled";
   regFrom: string;
   regTo: string;
@@ -81,7 +86,12 @@ const emptyFilters: Filters = {
   payed: "",
   phone: "",
   email: "",
+  ipAddr: "",
+  level: "",
   channelCode: "",
+  vipFrom: "",
+  vipTo: "",
+  bankAccount: "",
   status: "",
   regFrom: "",
   regTo: "",
