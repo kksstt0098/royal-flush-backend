@@ -22,6 +22,15 @@ type Deposit = {
   channel: string;
   status: string;
   created_at: string;
+  level?: number | null;
+  source_user_id?: string | null;
+  channel_code?: string | null;
+  bank_type?: string | null;
+  account_no?: string | null;
+  bonus_amount?: number | null;
+  actual_amount?: number | null;
+  notify_time?: string | null;
+  player_level?: number | null;
 };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -57,6 +66,10 @@ type Filters = {
   startAmount: string;
   endAmount: string;
   firstRecharge: string;
+  sourceUserID: string;
+  channelCode: string;
+  bankType: string;
+  accountNo: string;
 };
 
 const emptyFilters: Filters = {
@@ -69,6 +82,10 @@ const emptyFilters: Filters = {
   startAmount: "",
   endAmount: "",
   firstRecharge: "",
+  sourceUserID: "",
+  channelCode: "",
+  bankType: "",
+  accountNo: "",
 };
 
 const statusStyles: Record<string, string> = {
@@ -96,12 +113,30 @@ export function OnlineRechargePage() {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as unknown as {
+        from: (t: string) => {
+          select: (s: string) => {
+            order: (
+              c: string,
+              o: { ascending: boolean },
+            ) => { limit: (n: number) => Promise<{ data: Record<string, unknown>[] | null }> };
+          };
+        };
+      })
         .from("deposits")
-        .select("id,order_no,player_id,amount,coins,channel,status,created_at")
+        .select(
+          "id,order_no,player_id,amount,coins,channel,status,created_at,source_user_id,channel_code,bank_type,account_no,bonus_amount,actual_amount,notify_time,profiles:profiles!deposits_player_id_fkey(level)",
+        )
         .order("created_at", { ascending: false })
         .limit(500);
-      if (!cancelled) setRows((data ?? []) as Deposit[]);
+      if (!cancelled) {
+        const mapped = (data ?? []).map((r) => ({
+          ...(r as object),
+          player_level:
+            (r as { profiles?: { level?: number | null } | null }).profiles?.level ?? null,
+        })) as Deposit[];
+        setRows(mapped);
+      }
     };
     load();
     const ch = supabase
@@ -137,6 +172,16 @@ export function OnlineRechargePage() {
       if (f.playerID && !d.player_id.includes(f.playerID)) return false;
       if (f.channel && !d.channel.toLowerCase().includes(f.channel.toLowerCase())) return false;
       if (f.status && d.status !== f.status) return false;
+      if (f.sourceUserID && !(d.source_user_id ?? "").includes(f.sourceUserID)) return false;
+      if (
+        f.channelCode &&
+        !(d.channel_code ?? "").toLowerCase().includes(f.channelCode.toLowerCase())
+      )
+        return false;
+      if (f.bankType && !(d.bank_type ?? "").toLowerCase().includes(f.bankType.toLowerCase()))
+        return false;
+      if (f.accountNo && !(d.account_no ?? "").toLowerCase().includes(f.accountNo.toLowerCase()))
+        return false;
       const isFirst = firstByPlayer.get(d.player_id) === d.id;
       if (f.firstRecharge === "yes" && !isFirst) return false;
       if (f.firstRecharge === "no" && isFirst) return false;
@@ -176,11 +221,39 @@ export function OnlineRechargePage() {
     setPage(1);
   };
   const doExport = () => {
-    const headers = ["OrderNo", "playerID", "Channel", "Amount", "Coins", "Status", "CreateTime"];
+    const headers = [
+      "OrderNo",
+      "playerID",
+      "Level",
+      "SourceUserID",
+      "ChannelCode",
+      "BankType",
+      "AccountNo",
+      "OrderAmount",
+      "BonusAmount",
+      "ActualAmount",
+      "Status",
+      "CreateTime",
+      "NotifyTime",
+    ];
     const lines = [headers.join(",")];
     for (const d of visible) {
       lines.push(
-        [d.order_no, d.player_id, d.channel, d.amount, d.coins, d.status, d.created_at]
+        [
+          d.order_no,
+          d.player_id,
+          d.player_level ?? "",
+          d.source_user_id ?? "",
+          d.channel_code ?? "",
+          d.bank_type ?? "",
+          d.account_no ?? "",
+          d.amount,
+          d.bonus_amount ?? 0,
+          d.actual_amount ?? d.amount,
+          d.status,
+          d.created_at,
+          d.notify_time ?? "",
+        ]
           .map((v) => `"${String(v).replace(/"/g, '""')}"`)
           .join(","),
       );
@@ -275,6 +348,38 @@ export function OnlineRechargePage() {
               onChange={(e) => update("endAmount", e.target.value)}
             />
           </Field>
+          <Field label="Source User ID">
+            <input
+              className={inputCls}
+              placeholder="Source User ID"
+              value={filters.sourceUserID}
+              onChange={(e) => update("sourceUserID", e.target.value)}
+            />
+          </Field>
+          <Field label="Channel Code">
+            <input
+              className={inputCls}
+              placeholder="Channel Code"
+              value={filters.channelCode}
+              onChange={(e) => update("channelCode", e.target.value)}
+            />
+          </Field>
+          <Field label="Bank Type">
+            <input
+              className={inputCls}
+              placeholder="Bank Type"
+              value={filters.bankType}
+              onChange={(e) => update("bankType", e.target.value)}
+            />
+          </Field>
+          <Field label="Account No">
+            <input
+              className={inputCls}
+              placeholder="Account No"
+              value={filters.accountNo}
+              onChange={(e) => update("accountNo", e.target.value)}
+            />
+          </Field>
           <div className="flex items-center gap-2 col-span-1 md:col-span-2 xl:col-span-2 justify-end">
             <button
               onClick={doSearch}
@@ -341,17 +446,24 @@ export function OnlineRechargePage() {
             <tr className="[&>th]:h-9 [&>th]:px-2 [&>th]:text-left [&>th]:font-medium [&>th]:whitespace-nowrap">
               <th>OrderNo.</th>
               <th>playerID</th>
-              <th>Channel</th>
-              <th>Amount</th>
-              <th>Coins</th>
+              <th>Level</th>
+              <th>Source User ID</th>
+              <th>Channel Code</th>
+              <th>Bank Type</th>
+              <th>Account No</th>
+              <th>Order Amount</th>
+              <th>Bonus Amount</th>
+              <th>Actual Amount</th>
               <th>Status</th>
               <th>Create Time</th>
+              <th>Notify Time</th>
+              <th>Operate</th>
             </tr>
           </thead>
           <tbody>
             {pageRows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-10 text-muted-foreground">
+                <td colSpan={14} className="text-center py-10 text-muted-foreground">
                   No data
                 </td>
               </tr>
@@ -363,9 +475,14 @@ export function OnlineRechargePage() {
                 >
                   <td className="text-info">{d.order_no}</td>
                   <td className="text-info">{d.player_id}</td>
-                  <td>{d.channel}</td>
+                  <td>{d.player_level ?? "-"}</td>
+                  <td className="text-info">{d.source_user_id ?? "-"}</td>
+                  <td>{d.channel_code ?? d.channel ?? "-"}</td>
+                  <td>{d.bank_type ?? "-"}</td>
+                  <td>{d.account_no ?? "-"}</td>
                   <td>{Number(d.amount).toLocaleString()}</td>
-                  <td>{Number(d.coins).toLocaleString()}</td>
+                  <td>{Number(d.bonus_amount ?? 0).toLocaleString()}</td>
+                  <td>{Number(d.actual_amount ?? d.amount).toLocaleString()}</td>
                   <td>
                     <span
                       className={
@@ -377,6 +494,10 @@ export function OnlineRechargePage() {
                     </span>
                   </td>
                   <td>{new Date(d.created_at).toLocaleString()}</td>
+                  <td>{d.notify_time ? new Date(d.notify_time).toLocaleString() : "-"}</td>
+                  <td>
+                    <button className="text-info hover:underline text-[12px]">Detail</button>
+                  </td>
                 </tr>
               ))
             )}

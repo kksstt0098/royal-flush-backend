@@ -79,45 +79,66 @@ export type Database = {
       }
       deposits: {
         Row: {
+          account_no: string | null
+          actual_amount: number | null
           amount: number
+          bank_type: string | null
+          bonus_amount: number
           channel: string | null
+          channel_code: string | null
           coins: number
           created_at: string
           created_by: string | null
           created_by_name: string | null
           credit_type: string | null
           id: string
+          notify_time: string | null
           order_no: string
           player_id: string
           remark: string | null
+          source_user_id: string | null
           status: string
         }
         Insert: {
+          account_no?: string | null
+          actual_amount?: number | null
           amount: number
+          bank_type?: string | null
+          bonus_amount?: number
           channel?: string | null
+          channel_code?: string | null
           coins: number
           created_at?: string
           created_by?: string | null
           created_by_name?: string | null
           credit_type?: string | null
           id?: string
+          notify_time?: string | null
           order_no: string
           player_id: string
           remark?: string | null
+          source_user_id?: string | null
           status?: string
         }
         Update: {
+          account_no?: string | null
+          actual_amount?: number | null
           amount?: number
+          bank_type?: string | null
+          bonus_amount?: number
           channel?: string | null
+          channel_code?: string | null
           coins?: number
           created_at?: string
           created_by?: string | null
           created_by_name?: string | null
           credit_type?: string | null
           id?: string
+          notify_time?: string | null
           order_no?: string
           player_id?: string
           remark?: string | null
+          source_user_id?: string | null
           status?: string
         }
         Relationships: []
