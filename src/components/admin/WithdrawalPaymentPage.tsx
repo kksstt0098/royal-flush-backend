@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { mockWithdrawals, type Withdrawal } from "@/lib/mock-withdrawals";
 import { mockPlayers } from "@/lib/mock-players";
-import { Search, Download, Calendar, ChevronLeft, ChevronRight, ArrowRightLeft, X } from "lucide-react";
+import { Search, Download, Calendar, ChevronLeft, ChevronRight, ArrowRightLeft } from "lucide-react";
+import { OrderDetailsModal } from "./OrderDetailsModal";
 
 const inputCls =
   "w-full h-8 px-2 text-[12px] rounded-sm border border-panel-border bg-panel focus:outline-none focus:border-info placeholder:text-muted-foreground/60";
@@ -139,7 +140,6 @@ export function WithdrawalPaymentPage() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [transferTarget, setTransferTarget] = useState<Withdrawal | null>(null);
-  const [transferNote, setTransferNote] = useState("");
 
   const update = <K extends keyof Filters>(k: K, v: Filters[K]) =>
     setFilters((f) => ({ ...f, [k]: v }));
@@ -234,7 +234,6 @@ export function WithdrawalPaymentPage() {
       notifyTime: new Date().toISOString().slice(0, 16).replace("T", " "),
     });
     setTransferTarget(null);
-    setTransferNote("");
   };
 
   const doExport = () => {
@@ -401,9 +400,13 @@ export function WithdrawalPaymentPage() {
                     <td>
                       <div className="flex items-center gap-2 justify-center">
                         <button
-                          onClick={() => { setTransferTarget(w); setTransferNote(""); }}
+                          onClick={() => setTransferTarget(w)}
+                          className="text-info hover:underline"
+                        >details</button>
+                        <button
+                          onClick={() => setTransferTarget(w)}
                           disabled={w.status !== "Audited"}
-                          className="text-info hover:underline disabled:opacity-40"
+                          className="text-success hover:underline disabled:opacity-40"
                         >Transfer</button>
                         <button
                           onClick={() => updateRow(w.orderNo, {
@@ -443,42 +446,21 @@ export function WithdrawalPaymentPage() {
 
       {/* Transfer modal */}
       {transferTarget && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-6"
-          onClick={() => setTransferTarget(null)}>
-          <div className="bg-panel rounded-md w-full max-w-md border border-panel-border shadow-lg"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-4 h-11 border-b border-panel-border">
-              <div className="text-[14px] font-medium">Transfer Withdrawal</div>
-              <button onClick={() => setTransferTarget(null)}><X className="w-4 h-4" /></button>
-            </div>
-            <div className="p-4 space-y-3 text-[12.5px]">
-              <div className="grid grid-cols-2 gap-2">
-                <div><span className="text-muted-foreground">Order No.:</span> {transferTarget.orderNo}</div>
-                <div><span className="text-muted-foreground">playerID:</span> {transferTarget.playerID}</div>
-                <div><span className="text-muted-foreground">Payout Mode:</span> {transferTarget.payoutMode}</div>
-                <div><span className="text-muted-foreground">Account No.:</span> {transferTarget.accountNo}</div>
-                <div><span className="text-muted-foreground">Apply Amount:</span> {transferTarget.applyAmount.toLocaleString()}</div>
-                <div><span className="text-muted-foreground">Actual Amount:</span> {transferTarget.actualAmount.toLocaleString()}</div>
-                <div><span className="text-muted-foreground">Reviewer:</span> {transferTarget.auditor}</div>
-              </div>
-              <div>
-                <label className="text-[12px] text-foreground/70">Remarks</label>
-                <textarea
-                  value={transferNote}
-                  onChange={(e) => setTransferNote(e.target.value)}
-                  className="w-full mt-1 h-20 p-2 text-[12px] rounded-sm border border-panel-border bg-background"
-                  placeholder="Transfer note..."
-                />
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-2 px-4 h-11 border-t border-panel-border">
-              <button onClick={() => setTransferTarget(null)}
-                className="h-7 px-3 rounded-sm border border-panel-border text-[12px]">{t("cancel")}</button>
-              <button onClick={confirmTransfer}
-                className="h-7 px-3 rounded-sm bg-info text-info-foreground text-[12px]">Confirm Transfer</button>
-            </div>
-          </div>
-        </div>
+        <OrderDetailsModal
+          withdrawal={transferTarget}
+          player={playerMap.get(transferTarget.playerID)}
+          onClose={() => setTransferTarget(null)}
+          footer={
+            transferTarget.status === "Audited" ? (
+              <button
+                onClick={confirmTransfer}
+                className="h-8 px-5 rounded-sm bg-info text-info-foreground text-[12.5px]"
+              >
+                Transfer
+              </button>
+            ) : null
+          }
+        />
       )}
     </div>
   );
