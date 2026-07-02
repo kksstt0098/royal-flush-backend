@@ -5,6 +5,7 @@ import { AdminShell, type PageKey } from "@/components/admin/AdminShell";
 import { PlayerQueryPage } from "@/components/admin/PlayerQueryPage";
 import { WithdrawalOrderPage } from "@/components/admin/WithdrawalOrderPage";
 import { ReviewWithdrawalPage } from "@/components/admin/ReviewWithdrawalPage";
+import { WithdrawalPaymentPage } from "@/components/admin/WithdrawalPaymentPage";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -39,8 +40,10 @@ function Index() {
           <PlayerQueryPage />
         ) : active === "withdrawalOrder" ? (
           <WithdrawalOrderPage />
-        ) : (
+        ) : active === "reviewWithdrawal" ? (
           <ReviewWithdrawalPage />
+        ) : (
+          <WithdrawalPaymentPage />
         )}
       </AdminShell>
     </LangProvider>
