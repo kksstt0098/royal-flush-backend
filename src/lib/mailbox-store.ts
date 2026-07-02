@@ -1,4 +1,5 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type Mail = {
   id: string;
@@ -9,34 +10,90 @@ export type Mail = {
   read: boolean;
 };
 
-let mails: Mail[] = [];
+type Row = {
+  id: string;
+  player_id: string;
+  subject: string;
+  body: string;
+  read: boolean;
+  created_at: string;
+};
+
+const fmt = (iso: string) => new Date(iso).toISOString().slice(0, 16).replace("T", " ");
+
+const mapRow = (r: Row): Mail => ({
+  id: r.id,
+  playerID: r.player_id,
+  subject: r.subject,
+  body: r.body,
+  time: fmt(r.created_at),
+  read: r.read,
+});
+
+let cache: Mail[] = [];
+let loaded = false;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
-const subscribe = (l: () => void) => {
-  listeners.add(l);
-  return () => {
-    listeners.delete(l);
-  };
-};
-const getSnapshot = () => mails;
+
+async function fetchAll() {
+  const { data, error } = await supabase
+    .from("mails")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("[mails]", error);
+    return;
+  }
+  cache = (data as Row[]).map(mapRow);
+  loaded = true;
+  emit();
+}
+
+let channel: ReturnType<typeof supabase.channel> | null = null;
+function ensureSubscription() {
+  if (channel) return;
+  channel = supabase
+    .channel("mails-live")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "mails" },
+      () => {
+        void fetchAll();
+      },
+    )
+    .subscribe();
+}
 
 export function useMailbox(playerID?: string) {
-  const all = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  return playerID ? all.filter((m) => m.playerID === playerID) : all;
+  const [snap, setSnap] = useState<Mail[]>(cache);
+  useEffect(() => {
+    const l = () => setSnap([...cache]);
+    listeners.add(l);
+    ensureSubscription();
+    if (!loaded) void fetchAll();
+    l();
+    return () => {
+      listeners.delete(l);
+    };
+  }, []);
+  return playerID ? snap.filter((m) => m.playerID === playerID) : snap;
 }
 
-export function sendMail(m: Omit<Mail, "id" | "time" | "read">) {
-  const mail: Mail = {
-    ...m,
-    id: `M${Date.now()}${Math.floor(Math.random() * 1000)}`,
-    time: new Date().toISOString().slice(0, 16).replace("T", " "),
-    read: false,
-  };
-  mails = [mail, ...mails];
-  emit();
+export async function sendMail(m: Omit<Mail, "id" | "time" | "read">) {
+  const { error } = await supabase.rpc("send_mail", {
+    _player_id: m.playerID,
+    _subject: m.subject,
+    _body: m.body,
+  });
+  if (error) {
+    console.error("[send_mail]", error);
+    alert(error.message);
+  }
+  await fetchAll();
 }
 
-export function markMailRead(id: string) {
-  mails = mails.map((m) => (m.id === id ? { ...m, read: true } : m));
-  emit();
+export async function markMailRead(id: string) {
+  const { error } = await supabase.from("mails").update({ read: true }).eq("id", id);
+  if (error) console.error("[markMailRead]", error);
+  await fetchAll();
 }
