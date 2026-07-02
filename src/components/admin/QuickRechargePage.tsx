@@ -1,6 +1,82 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/lib/i18n";
+import {
+  Search,
+  RotateCcw,
+  Download,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+
+const inputCls =
+  "w-full h-8 px-2 text-[12px] rounded-sm border border-panel-border bg-panel focus:outline-none focus:border-info placeholder:text-muted-foreground/60";
+
+type HistoryRow = {
+  id: string;
+  order_no: string;
+  player_id: string;
+  amount: number;
+  coins: number;
+  channel: string;
+  status: string;
+  credit_type: string | null;
+  remark: string | null;
+  created_by_name: string | null;
+  created_at: string;
+};
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <label className="text-[12px] text-foreground/70 shrink-0 whitespace-nowrap">{label}</label>
+      <div className="flex-1 min-w-0">{children}</div>
+    </div>
+  );
+}
+
+function DateInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="relative">
+      <Calendar className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+      <input
+        type="datetime-local"
+        className={inputCls + " pl-7"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </div>
+  );
+}
+
+type Filters = {
+  createFrom: string;
+  createTo: string;
+  orderNo: string;
+  playerID: string;
+  creditType: string;
+  startAmount: string;
+  endAmount: string;
+  remark: string;
+};
+
+const emptyFilters: Filters = {
+  createFrom: "",
+  createTo: "",
+  orderNo: "",
+  playerID: "",
+  creditType: "",
+  startAmount: "",
+  endAmount: "",
+  remark: "",
+};
+
+const tabDefs = [
+  { key: "all", label: "total credits", match: (_r: HistoryRow) => true },
+  { key: "Bonus", label: "Bonus", match: (r: HistoryRow) => r.credit_type === "Bonus" },
+  { key: "Manual", label: "Manual Deposit", match: (r: HistoryRow) => r.credit_type === "Manual" },
+];
 
 type Mode = "single" | "bulk";
 type CreditType = "Bonus" | "Manual";
@@ -20,6 +96,121 @@ export function QuickRechargePage() {
   const [remark, setRemark] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [results, setResults] = useState<RowResult[]>([]);
+
+  // History state
+  const [history, setHistory] = useState<HistoryRow[]>([]);
+  const [filters, setFilters] = useState<Filters>(emptyFilters);
+  const [applied, setApplied] = useState<Filters>(emptyFilters);
+  const [activeTab, setActiveTab] = useState<string>("all");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const { data } = await supabase
+        .from("deposits")
+        .select(
+          "id,order_no,player_id,amount,coins,channel,status,credit_type,remark,created_by_name,created_at",
+        )
+        .in("credit_type", ["Bonus", "Manual"])
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (!cancelled) setHistory((data ?? []) as HistoryRow[]);
+    };
+    load();
+    const ch = supabase
+      .channel("deposits-quick-recharge")
+      .on("postgres_changes", { event: "*", schema: "public", table: "deposits" }, load)
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(ch);
+    };
+  }, []);
+
+  const updateF = <K extends keyof Filters>(k: K, v: Filters[K]) =>
+    setFilters((f) => ({ ...f, [k]: v }));
+
+  const filtered = useMemo(() => {
+    const f = applied;
+    const from = f.createFrom ? new Date(f.createFrom).getTime() : 0;
+    const to = f.createTo ? new Date(f.createTo).getTime() : Infinity;
+    const min = f.startAmount ? Number(f.startAmount) : -Infinity;
+    const max = f.endAmount ? Number(f.endAmount) : Infinity;
+    return history.filter((d) => {
+      const ct = new Date(d.created_at).getTime();
+      if (ct < from || ct > to) return false;
+      if (f.orderNo && !d.order_no.toLowerCase().includes(f.orderNo.toLowerCase())) return false;
+      if (f.playerID && !d.player_id.includes(f.playerID)) return false;
+      if (f.creditType && d.credit_type !== f.creditType) return false;
+      if (f.remark && !(d.remark ?? "").toLowerCase().includes(f.remark.toLowerCase())) return false;
+      if (Number(d.amount) < min || Number(d.amount) > max) return false;
+      return true;
+    });
+  }, [history, applied]);
+
+  const counts = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const tab of tabDefs) map[tab.key] = filtered.filter(tab.match).length;
+    return map;
+  }, [filtered]);
+
+  const totalAmount = useMemo(
+    () => filtered.reduce((s, d) => s + Number(d.amount), 0),
+    [filtered],
+  );
+
+  const currentTab = tabDefs.find((tab) => tab.key === activeTab)!;
+  const visible = filtered.filter(currentTab.match);
+  const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
+  const pageRows = visible.slice((page - 1) * pageSize, page * pageSize);
+
+  const doSearch = () => {
+    setApplied(filters);
+    setPage(1);
+  };
+  const doReset = () => {
+    setFilters(emptyFilters);
+    setApplied(emptyFilters);
+    setPage(1);
+  };
+  const doExport = () => {
+    const headers = [
+      "OrderNo",
+      "playerID",
+      "CreditType",
+      "Amount",
+      "Coins",
+      "Remark",
+      "CreatedBy",
+      "CreateTime",
+    ];
+    const lines = [headers.join(",")];
+    for (const d of visible) {
+      lines.push(
+        [
+          d.order_no,
+          d.player_id,
+          d.credit_type ?? "",
+          d.amount,
+          d.coins,
+          d.remark ?? "",
+          d.created_by_name ?? "",
+          d.created_at,
+        ]
+          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+          .join(","),
+      );
+    }
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `quick_recharge_${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const parsedIds = useMemo(() => {
     if (mode === "single") {
