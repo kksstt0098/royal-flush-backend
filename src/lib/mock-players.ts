@@ -21,6 +21,19 @@ export type Player = {
   lastLogin: string;
   remark: string;
   status: "active" | "disabled";
+  safeCoins?: number;
+  addr?: string;
+  goldInTransfer?: number;
+  totalPayedTimes?: number;
+  totalWithdrawTimes?: number;
+  totalPayout?: number;
+  registerMac?: string;
+  registerIp?: string;
+  registerCountry?: string;
+  loginIp?: string;
+  loginCountry?: string;
+  payedRecords?: { orderNo: string; time: string; amount: number; coins: number }[];
+  withdrawalRecords?: { orderNo: string; time: string; amount: number; coins: number }[];
 };
 
 export const mockPlayers: Player[] = [
@@ -47,6 +60,27 @@ export const mockPlayers: Player[] = [
     lastLogin: "12-27 12:38",
     remark: "P107 to 9W",
     status: "disabled",
+    safeCoins: 0,
+    addr: "",
+    goldInTransfer: 15000,
+    totalPayedTimes: 230,
+    totalWithdrawTimes: 65,
+    totalPayout: 28031443.31,
+    registerMac: "f54ee1d92f25989b825c15a24e9c2c64",
+    registerIp: "136.228.174.127",
+    registerCountry: "Myanmar",
+    loginIp: "64.226.99.199",
+    loginCountry: "Germany",
+    payedRecords: [
+      { orderNo: "P2512271619276167", time: "2025-12-27 16:19:27", amount: 10000, coins: 10000 },
+      { orderNo: "P2512271545376136", time: "2025-12-27 15:45:37", amount: 10000, coins: 10000 },
+      { orderNo: "P2512271216245883", time: "2025-12-27 12:16:24", amount: 10000, coins: 10000 },
+      { orderNo: "P2512271201395862", time: "2025-12-27 12:01:39", amount: 5000, coins: 5000 },
+      { orderNo: "P2512261949025017", time: "2025-12-26 19:49:02", amount: 5000, coins: 5000 },
+    ],
+    withdrawalRecords: [
+      { orderNo: "W2512261100002211", time: "2025-12-26 11:00:22", amount: 5000, coins: 5000 },
+    ],
   },
   {
     playerID: "1075612",
