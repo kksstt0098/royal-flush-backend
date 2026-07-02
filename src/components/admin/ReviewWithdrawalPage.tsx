@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
 import { useT } from "@/lib/i18n";
-import { mockWithdrawals, type Withdrawal } from "@/lib/mock-withdrawals";
+import { type Withdrawal } from "@/lib/mock-withdrawals";
+import { useWithdrawals, updateWithdrawal, updateWithdrawals } from "@/lib/withdrawal-store";
+import { sendMail } from "@/lib/mailbox-store";
 import { mockPlayers } from "@/lib/mock-players";
 import { Search, Download, Calendar, ChevronLeft, ChevronRight, ShieldCheck } from "lucide-react";
 import { OrderDetailsModal } from "./OrderDetailsModal";
+import { TransferReviewModal, type ReviewAction } from "./TransferReviewModal";
 
 const inputCls =
   "w-full h-8 px-2 text-[12px] rounded-sm border border-panel-border bg-panel focus:outline-none focus:border-info placeholder:text-muted-foreground/60";
@@ -59,13 +62,14 @@ export function ReviewWithdrawalPage() {
   const { t } = useT();
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [applied, setApplied] = useState<Filters>(emptyFilters);
-  const [rows, setRows] = useState<Withdrawal[]>(
-    mockWithdrawals.filter((w) => w.status === "Pending" || w.status === "Audited"),
-  );
+  const allRows = useWithdrawals();
+  // Review page only shows brand-new Pending orders awaiting audit.
+  const rows = useMemo(() => allRows.filter((w) => w.status === "Pending"), [allRows]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
-  const [auditTarget, setAuditTarget] = useState<Withdrawal | null>(null);
+  const [detailTarget, setDetailTarget] = useState<Withdrawal | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<Withdrawal | null>(null);
 
   const update = <K extends keyof Filters>(k: K, v: Filters[K]) =>
     setFilters((f) => ({ ...f, [k]: v }));
@@ -181,15 +185,12 @@ export function ReviewWithdrawalPage() {
     URL.revokeObjectURL(url);
   };
 
-  const updateRow = (orderNo: string, patch: Partial<Withdrawal>) =>
-    setRows((rs) => rs.map((r) => (r.orderNo === orderNo ? { ...r, ...patch } : r)));
-
   const auditBulk = () => {
     if (selected.size === 0) {
       alert("Please select orders to audit");
       return;
     }
-    setRows((rs) =>
+    updateWithdrawals((rs) =>
       rs.map((r) =>
         selected.has(r.orderNo) && r.status === "Pending"
           ? { ...r, status: "Audited", auditor: "Minmin" }
@@ -197,6 +198,42 @@ export function ReviewWithdrawalPage() {
       ),
     );
     setSelected(new Set());
+  };
+
+  const handleReview = (action: ReviewAction, remark: string) => {
+    if (!reviewTarget) return;
+    const w = reviewTarget;
+    if (action === "approve") {
+      updateWithdrawal(w.orderNo, { status: "Audited", auditor: "Minmin" });
+      if (remark.trim()) {
+        sendMail({
+          playerID: w.playerID,
+          subject: `Withdrawal ${w.orderNo} approved`,
+          body: remark,
+        });
+      }
+    } else if (action === "reject") {
+      updateWithdrawal(w.orderNo, { status: "Reject", auditor: "Minmin" });
+      sendMail({
+        playerID: w.playerID,
+        subject: `Withdrawal ${w.orderNo} rejected`,
+        body: remark || "Your withdrawal request has been rejected.",
+      });
+    } else {
+      // risk control — freeze funds
+      updateWithdrawal(w.orderNo, {
+        status: "Freeze",
+        auditor: "Minmin",
+        lockFlag: "locked",
+        lockUser: "Minmin",
+      });
+      sendMail({
+        playerID: w.playerID,
+        subject: `Withdrawal ${w.orderNo} under risk review`,
+        body: remark || "Your funds are temporarily held for a risk review.",
+      });
+    }
+    setReviewTarget(null);
   };
 
   return (
@@ -398,14 +435,14 @@ export function ReviewWithdrawalPage() {
                       <div className="flex flex-col items-center gap-0.5">
                         <button
                           onClick={() => {
-                            setAuditTarget(w);
+                            setDetailTarget(w);
                           }}
                           className="text-info hover:underline"
                         >
                           details
                         </button>
                         <button
-                          onClick={() => setAuditTarget(w)}
+                          onClick={() => setReviewTarget(w)}
                           disabled={w.status !== "Pending"}
                           className="text-success hover:underline disabled:opacity-40"
                         >
@@ -413,7 +450,7 @@ export function ReviewWithdrawalPage() {
                         </button>
                         <button
                           onClick={() =>
-                            updateRow(w.orderNo, {
+                            updateWithdrawal(w.orderNo, {
                               lockFlag: w.lockFlag === "locked" ? "unlocked" : "locked",
                               lockUser: w.lockFlag === "locked" ? "" : "Minmin",
                             })
@@ -472,36 +509,35 @@ export function ReviewWithdrawalPage() {
         />
       </div>
 
-      {/* Audit modal */}
-      {auditTarget && (
+      {/* Details modal (view only) */}
+      {detailTarget && (
         <OrderDetailsModal
-          withdrawal={auditTarget}
-          player={playerMap.get(auditTarget.playerID)}
-          onClose={() => setAuditTarget(null)}
+          withdrawal={detailTarget}
+          player={playerMap.get(detailTarget.playerID)}
+          onClose={() => setDetailTarget(null)}
           footer={
-            auditTarget.status === "Pending" ? (
-              <>
-                <button
-                  onClick={() => {
-                    updateRow(auditTarget.orderNo, { status: "Reject", auditor: "Minmin" });
-                    setAuditTarget(null);
-                  }}
-                  className="h-8 px-5 rounded-sm bg-danger text-danger-foreground text-[12.5px]"
-                >
-                  Reject
-                </button>
-                <button
-                  onClick={() => {
-                    updateRow(auditTarget.orderNo, { status: "Audited", auditor: "Minmin" });
-                    setAuditTarget(null);
-                  }}
-                  className="h-8 px-5 rounded-sm bg-info text-info-foreground text-[12.5px]"
-                >
-                  audit
-                </button>
-              </>
+            detailTarget.status === "Pending" ? (
+              <button
+                onClick={() => {
+                  const w = detailTarget;
+                  setDetailTarget(null);
+                  setReviewTarget(w);
+                }}
+                className="h-8 px-5 rounded-sm bg-info text-info-foreground text-[12.5px]"
+              >
+                Review
+              </button>
             ) : null
           }
+        />
+      )}
+
+      {/* Transfer review modal */}
+      {reviewTarget && (
+        <TransferReviewModal
+          withdrawal={reviewTarget}
+          onClose={() => setReviewTarget(null)}
+          onSubmit={handleReview}
         />
       )}
     </div>
