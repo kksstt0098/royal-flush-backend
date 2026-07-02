@@ -16,6 +16,7 @@ import {
   BarChart3,
   Banknote,
   CreditCard as RechargeIcon,
+  Megaphone,
 } from "lucide-react";
 
 export type PageKey =
