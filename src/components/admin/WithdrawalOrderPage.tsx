@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { mockWithdrawals, type Withdrawal, type WithdrawalStatus } from "@/lib/mock-withdrawals";
+import { mockPlayers } from "@/lib/mock-players";
+import { OrderDetailsModal } from "./OrderDetailsModal";
 import {
   Search,
   RotateCcw,
@@ -8,7 +10,6 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
-  X,
 } from "lucide-react";
 
 const inputCls =
@@ -248,6 +249,11 @@ export function WithdrawalOrderPage() {
     () => Array.from(new Set(mockWithdrawals.map((w) => w.payoutMode))),
     [],
   );
+  const playerMap = useMemo(() => {
+    const m = new Map<string, (typeof mockPlayers)[number]>();
+    for (const p of mockPlayers) m.set(p.playerID, p);
+    return m;
+  }, []);
 
   return (
     <div className="space-y-2">
@@ -618,117 +624,42 @@ export function WithdrawalOrderPage() {
 
       {/* Details modal */}
       {detail && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-6"
-          onClick={() => setDetail(null)}
-        >
-          <div
-            className="bg-panel rounded-md w-full max-w-3xl border border-panel-border shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-4 h-11 border-b border-panel-border">
-              <div className="text-[14px] font-medium">{t("withdrawalOrderDetails")}</div>
-              <button
-                onClick={() => setDetail(null)}
-                className="text-muted-foreground hover:text-danger"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-4 grid grid-cols-2 gap-x-6 gap-y-2 text-[12.5px]">
-              {[
-                ["OrderNo.", detail.orderNo],
-                ["playerID", detail.playerID],
-                ["Level", detail.level],
-                ["Source userId", detail.sourceUserId || "-"],
-                ["Channel code", detail.channelCode],
-                ["Payout Mode", detail.payoutMode],
-                ["Account No.", detail.accountNo],
-                ["Apply Amount", detail.applyAmount.toLocaleString()],
-                ["Fee", detail.fee.toLocaleString()],
-                ["Actual Amount", detail.actualAmount.toLocaleString()],
-                ["Channel", detail.channel || "-"],
-                ["OutTradeNo", detail.outTradeNo || "-"],
-                ["Status", detail.status],
-                ["Create Time", detail.createTime],
-                ["Payment Time", detail.paymentTime || "-"],
-                ["Auditor", detail.auditor || "-"],
-                ["Transferor", detail.transferor || "-"],
-                ["Lock User", detail.lockUser || "-"],
-                ["Notify time", detail.notifyTime || "-"],
-                ["First Withdrawal", detail.firstWithdrawal ? "Yes" : "No"],
-                ["Lock Flag", detail.lockFlag],
-              ].map(([k, v]) => (
-                <div key={String(k)} className="flex gap-2">
-                  <span className="text-muted-foreground w-32 shrink-0">{k}</span>
-                  <span className="text-foreground/90 break-all">{String(v)}</span>
-                </div>
-              ))}
-            </div>
-            <div className="px-4 py-3 border-t border-panel-border flex items-center justify-end gap-2">
+        <OrderDetailsModal
+          withdrawal={detail}
+          player={playerMap.get(detail.playerID)}
+          onClose={() => setDetail(null)}
+          footer={
+            <>
               {detail.status === "Pending" && (
-                <>
-                  <button
-                    onClick={() => {
-                      updateRow(detail.orderNo, { status: "Audited", auditor: "Minmin" });
-                      setDetail({ ...detail, status: "Audited", auditor: "Minmin" });
-                    }}
-                    className="h-8 px-3 rounded-sm bg-info text-info-foreground text-[12px]"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => {
-                      updateRow(detail.orderNo, { status: "Reject", auditor: "Minmin" });
-                      setDetail({ ...detail, status: "Reject", auditor: "Minmin" });
-                    }}
-                    className="h-8 px-3 rounded-sm bg-danger text-danger-foreground text-[12px]"
-                  >
-                    Reject
-                  </button>
-                </>
+                <button
+                  onClick={() => {
+                    updateRow(detail.orderNo, { status: "Audited", auditor: "Minmin" });
+                    setDetail({ ...detail, status: "Audited", auditor: "Minmin" });
+                  }}
+                  className="h-8 px-5 rounded-sm bg-info text-info-foreground text-[12.5px]"
+                >
+                  audit
+                </button>
               )}
               {(detail.status === "Audited" || detail.status === "Paying Out") && (
-                <>
-                  <button
-                    onClick={() => {
-                      const now = new Date().toISOString().slice(0, 16).replace("T", " ");
-                      updateRow(detail.orderNo, {
-                        status: "Successful",
-                        paymentTime: now,
-                        notifyTime: now,
-                      });
-                      setDetail({
-                        ...detail,
-                        status: "Successful",
-                        paymentTime: now,
-                        notifyTime: now,
-                      });
-                    }}
-                    className="h-8 px-3 rounded-sm bg-success text-success-foreground text-[12px]"
-                  >
-                    Mark Paid
-                  </button>
-                  <button
-                    onClick={() => {
-                      updateRow(detail.orderNo, { status: "Failed" });
-                      setDetail({ ...detail, status: "Failed" });
-                    }}
-                    className="h-8 px-3 rounded-sm bg-danger text-danger-foreground text-[12px]"
-                  >
-                    Mark Failed
-                  </button>
-                </>
+                <button
+                  onClick={() => {
+                    const now = new Date().toISOString().slice(0, 16).replace("T", " ");
+                    updateRow(detail.orderNo, {
+                      status: "Successful",
+                      paymentTime: now,
+                      notifyTime: now,
+                    });
+                    setDetail({ ...detail, status: "Successful", paymentTime: now, notifyTime: now });
+                  }}
+                  className="h-8 px-5 rounded-sm bg-success text-success-foreground text-[12.5px]"
+                >
+                  Mark Paid
+                </button>
               )}
-              <button
-                onClick={() => setDetail(null)}
-                className="h-8 px-3 rounded-sm border border-panel-border text-[12px]"
-              >
-                {t("close")}
-              </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        />
       )}
     </div>
   );
