@@ -97,6 +97,19 @@ export const dict: Dict = {
   payedNo: { en: "Not payed", my: "ငွေမသွင်းရသေးသူ" },
   active: { en: "Active", my: "ဖွင့်ထား" },
   disabled: { en: "Disabled", my: "ပိတ်ထား" },
+  dataOverview: { en: "Data Overview", my: "ဒေတာအနှစ်ချုပ်" },
+  onlinePlayers: { en: "Online Players", my: "အွန်လိုင်းကစားသမား" },
+  gameRecords: { en: "Game Records", my: "ဂိမ်းမှတ်တမ်း" },
+  entryExitRecords: { en: "Entry/Exit Records", my: "ဝင်/ထွက်မှတ်တမ်း" },
+  accountLogs: { en: "Account Logs", my: "အကောင့်မှတ်တမ်း" },
+  activeUserSearch: { en: "Active User Search", my: "အသုံးပြုသူရှာဖွေမှု" },
+  playerGameStats: { en: "Player Game Stats", my: "ကစားသမားဂိမ်းစာရင်း" },
+  playerLoginLog: { en: "Player Login Log", my: "ကစားသမားဝင်မှတ်တမ်း" },
+  dataStatistics: { en: "Data statistics", my: "ဒေတာစာရင်း" },
+  cash: { en: "Cash", my: "ငွေသား" },
+  withdrawalReissue: { en: "Withdrawal Reissue", my: "ငွေထုတ်ပြန်ထုတ်" },
+  tmsConfig: { en: "TMS Config", my: "TMS ချိန်ညှိ" },
+  recharge: { en: "Recharge", my: "ငွေဖြည့်" },
 };
 
 type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (k: keyof typeof dict) => string };
