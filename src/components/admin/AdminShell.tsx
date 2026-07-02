@@ -62,7 +62,16 @@ const groups: NavGroup[] = [
       { key: "tmsConfig" },
     ],
   },
-  { key: "recharge", label: "recharge", icon: RechargeIcon, children: [] },
+  {
+    key: "recharge",
+    label: "recharge",
+    icon: RechargeIcon,
+    children: [
+      { key: "onlineRecharge" },
+      { key: "offlineRecharge" },
+      { key: "quickRecharge" },
+    ],
+  },
 ];
 
 export function AdminShell({
