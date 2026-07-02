@@ -66,7 +66,12 @@ type Filters = {
   payed: "" | "yes" | "no";
   phone: string;
   email: string;
+  ipAddr: string;
+  level: string;
   channelCode: string;
+  vipFrom: string;
+  vipTo: string;
+  bankAccount: string;
   status: "" | "active" | "disabled";
   regFrom: string;
   regTo: string;
@@ -81,7 +86,12 @@ const emptyFilters: Filters = {
   payed: "",
   phone: "",
   email: "",
+  ipAddr: "",
+  level: "",
   channelCode: "",
+  vipFrom: "",
+  vipTo: "",
+  bankAccount: "",
   status: "",
   regFrom: "",
   regTo: "",
@@ -112,7 +122,23 @@ export function PlayerQueryPage() {
       if (f.payed === "no" && p.totalPayed > 0) return false;
       if (f.phone && !p.phone.includes(f.phone.trim())) return false;
       if (f.email && !p.email.toLowerCase().includes(f.email.trim().toLowerCase())) return false;
+      if (
+        f.ipAddr &&
+        !(
+          (p.registerIp ?? "").includes(f.ipAddr.trim()) ||
+          (p.loginIp ?? "").includes(f.ipAddr.trim())
+        )
+      )
+        return false;
+      if (f.level && p.level !== f.level) return false;
       if (f.channelCode && p.channelCode !== f.channelCode.trim()) return false;
+      if (f.vipFrom && p.vip < Number(f.vipFrom)) return false;
+      if (f.vipTo && p.vip > Number(f.vipTo)) return false;
+      if (
+        f.bankAccount &&
+        !(p.addr ?? "").toLowerCase().includes(f.bankAccount.trim().toLowerCase())
+      )
+        return false;
       if (f.status && p.status !== f.status) return false;
       const created = parseTblDate(p.createTime);
       if (f.regFrom && created && created < new Date(f.regFrom)) return false;
@@ -123,6 +149,11 @@ export function PlayerQueryPage() {
       return true;
     });
   }, [players, applied]);
+
+  const levelOptions = useMemo(
+    () => Array.from(new Set(players.map((p) => p.level).filter(Boolean))).sort(),
+    [players],
+  );
 
   const allChecked = selected.size === filtered.length && filtered.length > 0;
   const toggle = (id: string) => {
@@ -219,7 +250,7 @@ export function PlayerQueryPage() {
     <div className="space-y-3">
       {/* Filter panel */}
       <section className="bg-panel border border-panel-border rounded-sm p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-6 gap-x-6 gap-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-8 gap-x-6 gap-y-3">
           <Field label={t("playerID")}>
             <input
               className={inputCls}
@@ -274,6 +305,28 @@ export function PlayerQueryPage() {
               onChange={(e) => setF("email", e.target.value)}
             />
           </Field>
+          <Field label={t("ipAddr")}>
+            <input
+              className={inputCls}
+              placeholder="login/register ip"
+              value={filters.ipAddr}
+              onChange={(e) => setF("ipAddr", e.target.value)}
+            />
+          </Field>
+          <Field label={t("level")}>
+            <select
+              className={inputCls}
+              value={filters.level}
+              onChange={(e) => setF("level", e.target.value)}
+            >
+              <option value="">{t("all")}</option>
+              {levelOptions.map((lv) => (
+                <option key={lv} value={lv}>
+                  {lv}
+                </option>
+              ))}
+            </select>
+          </Field>
           <Field label={t("channelCode")}>
             <input
               className={inputCls}
@@ -282,13 +335,42 @@ export function PlayerQueryPage() {
               onChange={(e) => setF("channelCode", e.target.value)}
             />
           </Field>
+          <div className="md:col-span-2">
+            <Field label={t("vipLevel")}>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  className={inputCls}
+                  value={filters.vipFrom}
+                  onChange={(e) => setF("vipFrom", e.target.value)}
+                />
+                <span className="text-muted-foreground text-[12px]">{t("to")}</span>
+                <input
+                  type="number"
+                  min={0}
+                  className={inputCls}
+                  value={filters.vipTo}
+                  onChange={(e) => setF("vipTo", e.target.value)}
+                />
+              </div>
+            </Field>
+          </div>
+          <Field label={t("bankAccount")}>
+            <input
+              className={inputCls}
+              placeholder="Bank Account"
+              value={filters.bankAccount}
+              onChange={(e) => setF("bankAccount", e.target.value)}
+            />
+          </Field>
           <Field label={t("status")}>
             <select
               className={inputCls}
               value={filters.status}
               onChange={(e) => setF("status", e.target.value as Filters["status"])}
             >
-              <option value="">{t("all")}</option>
+              <option value="">{t("select")}</option>
               <option value="active">{t("active")}</option>
               <option value="disabled">{t("disabled")}</option>
             </select>
