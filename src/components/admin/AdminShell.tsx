@@ -18,9 +18,9 @@ import {
   CreditCard as RechargeIcon,
 } from "lucide-react";
 
-const tabs = ["home", "withdrawalOrder", "withdrawalPayment", "playerQuery", "reviewWithdrawal"] as const;
+export type PageKey = "playerQuery" | "withdrawalOrder";
 
-type NavItem = { key: keyof typeof dict; active?: boolean };
+type NavItem = { key: keyof typeof dict; page?: PageKey };
 type NavGroup = {
   key: string;
   label: keyof typeof dict;
@@ -35,7 +35,7 @@ const groups: NavGroup[] = [
     label: "player",
     icon: Users,
     children: [
-      { key: "playerQuery", active: true },
+      { key: "playerQuery", page: "playerQuery" },
       { key: "onlinePlayers" },
       { key: "gameRecords" },
       { key: "entryExitRecords" },
@@ -51,7 +51,7 @@ const groups: NavGroup[] = [
     label: "cash",
     icon: Banknote,
     children: [
-      { key: "withdrawalOrder" },
+      { key: "withdrawalOrder", page: "withdrawalOrder" },
       { key: "reviewWithdrawal" },
       { key: "withdrawalPayment" },
       { key: "withdrawalReissue" },
@@ -61,10 +61,29 @@ const groups: NavGroup[] = [
   { key: "recharge", label: "recharge", icon: RechargeIcon, children: [] },
 ];
 
-export function AdminShell({ children }: { children: ReactNode }) {
+export function AdminShell({
+  children,
+  activePage,
+  onNavigate,
+  openTabs,
+  onCloseTab,
+}: {
+  children: ReactNode;
+  activePage: PageKey;
+  onNavigate: (p: PageKey) => void;
+  openTabs: PageKey[];
+  onCloseTab: (p: PageKey) => void;
+}) {
   const { t, lang, setLang } = useT();
-  const [open, setOpen] = useState<Record<string, boolean>>({ player: true });
+  const [open, setOpen] = useState<Record<string, boolean>>({ player: true, cash: true });
   const toggle = (k: string) => setOpen((o) => ({ ...o, [k]: !o[k] }));
+
+  const activeGroup = groups.find((g) =>
+    g.children?.some((c) => c.page === activePage),
+  );
+  const activeChild = activeGroup?.children?.find((c) => c.page === activePage);
+  const crumb = activeChild ? t(activeChild.key) : "";
+  const groupLabel = activeGroup ? t(activeGroup.label) : "";
 
   return (
     <div className="min-h-screen flex bg-background text-foreground text-sm">
@@ -99,19 +118,23 @@ export function AdminShell({ children }: { children: ReactNode }) {
                     {g.children!.length === 0 ? (
                       <div className="pl-11 py-1 text-[12px] text-white/40">—</div>
                     ) : (
-                      g.children!.map((c) => (
-                        <div
-                          key={c.key}
-                          className={
-                            "pl-11 pr-4 h-8 flex items-center cursor-pointer text-[12.5px] " +
-                            (c.active
-                              ? "bg-[oklch(0.6_0.18_250)]/15 text-[oklch(0.75_0.18_250)]"
-                              : "text-white/70 hover:bg-white/5")
-                          }
-                        >
-                          {t(c.key)}
-                        </div>
-                      ))
+                       g.children!.map((c) => {
+                         const isActive = c.page && c.page === activePage;
+                         return (
+                           <div
+                             key={c.key}
+                             onClick={() => c.page && onNavigate(c.page)}
+                             className={
+                               "pl-11 pr-4 h-8 flex items-center cursor-pointer text-[12.5px] " +
+                               (isActive
+                                 ? "bg-[oklch(0.6_0.18_250)]/15 text-[oklch(0.75_0.18_250)]"
+                                 : "text-white/70 hover:bg-white/5")
+                             }
+                           >
+                             {t(c.key)}
+                           </div>
+                         );
+                       })
                     )}
                   </div>
                 )}
@@ -129,9 +152,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <nav className="flex items-center gap-1 text-[13px]">
             <span className="text-foreground/80">{t("home")}</span>
             <span className="text-muted-foreground">/</span>
-            <span className="text-foreground/80">{t("player")}</span>
+            <span className="text-foreground/80">{groupLabel}</span>
             <span className="text-muted-foreground">/</span>
-            <span className="text-info">{t("playerQuery")}</span>
+            <span className="text-info">{crumb}</span>
           </nav>
         </div>
         <div className="flex items-center gap-4 text-[13px] text-foreground/80">
@@ -167,11 +190,12 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
       {/* Tabs */}
       <div className="flex items-center gap-1 border-b border-panel-border bg-panel px-4 h-9">
-        {tabs.map((tab) => {
-          const active = tab === "playerQuery";
+        {openTabs.map((tab) => {
+          const active = tab === activePage;
           return (
             <div
               key={tab}
+              onClick={() => onNavigate(tab)}
               className={
                 "group flex items-center gap-2 px-3 h-7 text-[12px] rounded-sm border cursor-pointer " +
                 (active
@@ -181,7 +205,13 @@ export function AdminShell({ children }: { children: ReactNode }) {
             >
               {active && <span className="w-1.5 h-1.5 rounded-full bg-success" />}
               <span>{t(tab)}</span>
-              <X className="w-3 h-3 text-muted-foreground/70 hover:text-danger" />
+              <X
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCloseTab(tab);
+                }}
+                className="w-3 h-3 text-muted-foreground/70 hover:text-danger"
+              />
             </div>
           );
         })}
