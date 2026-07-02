@@ -22,6 +22,15 @@ type Deposit = {
   channel: string;
   status: string;
   created_at: string;
+  level?: number | null;
+  source_user_id?: string | null;
+  channel_code?: string | null;
+  bank_type?: string | null;
+  account_no?: string | null;
+  bonus_amount?: number | null;
+  actual_amount?: number | null;
+  notify_time?: string | null;
+  player_level?: number | null;
 };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -57,6 +66,10 @@ type Filters = {
   startAmount: string;
   endAmount: string;
   firstRecharge: string;
+  sourceUserID: string;
+  channelCode: string;
+  bankType: string;
+  accountNo: string;
 };
 
 const emptyFilters: Filters = {
@@ -69,6 +82,10 @@ const emptyFilters: Filters = {
   startAmount: "",
   endAmount: "",
   firstRecharge: "",
+  sourceUserID: "",
+  channelCode: "",
+  bankType: "",
+  accountNo: "",
 };
 
 const statusStyles: Record<string, string> = {
@@ -98,10 +115,19 @@ export function OnlineRechargePage() {
     const load = async () => {
       const { data } = await supabase
         .from("deposits")
-        .select("id,order_no,player_id,amount,coins,channel,status,created_at")
+        .select(
+          "id,order_no,player_id,amount,coins,channel,status,created_at,source_user_id,channel_code,bank_type,account_no,bonus_amount,actual_amount,notify_time,profiles:profiles!deposits_player_id_fkey(level)" as string,
+        )
         .order("created_at", { ascending: false })
         .limit(500);
-      if (!cancelled) setRows((data ?? []) as Deposit[]);
+      if (!cancelled) {
+        const mapped = (data ?? []).map((r: Record<string, unknown>) => ({
+          ...(r as object),
+          player_level:
+            (r as { profiles?: { level?: number | null } | null }).profiles?.level ?? null,
+        })) as Deposit[];
+        setRows(mapped);
+      }
     };
     load();
     const ch = supabase
@@ -137,6 +163,16 @@ export function OnlineRechargePage() {
       if (f.playerID && !d.player_id.includes(f.playerID)) return false;
       if (f.channel && !d.channel.toLowerCase().includes(f.channel.toLowerCase())) return false;
       if (f.status && d.status !== f.status) return false;
+      if (f.sourceUserID && !(d.source_user_id ?? "").includes(f.sourceUserID)) return false;
+      if (
+        f.channelCode &&
+        !(d.channel_code ?? "").toLowerCase().includes(f.channelCode.toLowerCase())
+      )
+        return false;
+      if (f.bankType && !(d.bank_type ?? "").toLowerCase().includes(f.bankType.toLowerCase()))
+        return false;
+      if (f.accountNo && !(d.account_no ?? "").toLowerCase().includes(f.accountNo.toLowerCase()))
+        return false;
       const isFirst = firstByPlayer.get(d.player_id) === d.id;
       if (f.firstRecharge === "yes" && !isFirst) return false;
       if (f.firstRecharge === "no" && isFirst) return false;
@@ -176,11 +212,39 @@ export function OnlineRechargePage() {
     setPage(1);
   };
   const doExport = () => {
-    const headers = ["OrderNo", "playerID", "Channel", "Amount", "Coins", "Status", "CreateTime"];
+    const headers = [
+      "OrderNo",
+      "playerID",
+      "Level",
+      "SourceUserID",
+      "ChannelCode",
+      "BankType",
+      "AccountNo",
+      "OrderAmount",
+      "BonusAmount",
+      "ActualAmount",
+      "Status",
+      "CreateTime",
+      "NotifyTime",
+    ];
     const lines = [headers.join(",")];
     for (const d of visible) {
       lines.push(
-        [d.order_no, d.player_id, d.channel, d.amount, d.coins, d.status, d.created_at]
+        [
+          d.order_no,
+          d.player_id,
+          d.player_level ?? "",
+          d.source_user_id ?? "",
+          d.channel_code ?? "",
+          d.bank_type ?? "",
+          d.account_no ?? "",
+          d.amount,
+          d.bonus_amount ?? 0,
+          d.actual_amount ?? d.amount,
+          d.status,
+          d.created_at,
+          d.notify_time ?? "",
+        ]
           .map((v) => `"${String(v).replace(/"/g, '""')}"`)
           .join(","),
       );
