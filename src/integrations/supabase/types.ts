@@ -83,9 +83,13 @@ export type Database = {
           channel: string | null
           coins: number
           created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          credit_type: string | null
           id: string
           order_no: string
           player_id: string
+          remark: string | null
           status: string
         }
         Insert: {
@@ -93,9 +97,13 @@ export type Database = {
           channel?: string | null
           coins: number
           created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          credit_type?: string | null
           id?: string
           order_no: string
           player_id: string
+          remark?: string | null
           status?: string
         }
         Update: {
@@ -103,9 +111,13 @@ export type Database = {
           channel?: string | null
           coins?: number
           created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          credit_type?: string | null
           id?: string
           order_no?: string
           player_id?: string
+          remark?: string | null
           status?: string
         }
         Relationships: []
@@ -429,6 +441,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_credit_player: {
+        Args: {
+          _amount: number
+          _credit_type: string
+          _player_id: string
+          _remark: string
+        }
+        Returns: string
+      }
       approve_withdrawal: {
         Args: { _id: string; _remark: string }
         Returns: undefined
