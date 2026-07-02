@@ -150,6 +150,11 @@ export function PlayerQueryPage() {
     });
   }, [players, applied]);
 
+  const levelOptions = useMemo(
+    () => Array.from(new Set(players.map((p) => p.level).filter(Boolean))).sort(),
+    [players],
+  );
+
   const allChecked = selected.size === filtered.length && filtered.length > 0;
   const toggle = (id: string) => {
     const s = new Set(selected);
