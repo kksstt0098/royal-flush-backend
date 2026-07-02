@@ -65,7 +65,7 @@ function AdminPage() {
               Claim first admin (only if none exists yet)
             </button>
             <button
-              onClick={() => navigate({ to: "/_authenticated/player" as never })}
+              onClick={() => navigate({ to: "/player" })}
               className="h-9 rounded-sm border border-input bg-background text-sm hover:bg-accent"
             >
               Go to player app

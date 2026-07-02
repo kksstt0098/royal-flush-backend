@@ -90,7 +90,7 @@ function PlayerApp() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => navigate({ to: "/_authenticated/admin" as never })}
+              onClick={() => navigate({ to: "/admin" })}
               className="text-xs px-3 h-8 rounded-sm border border-input hover:bg-accent"
             >
               Admin panel
