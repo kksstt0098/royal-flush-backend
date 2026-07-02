@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { mockWithdrawals, type Withdrawal } from "@/lib/mock-withdrawals";
 import { mockPlayers } from "@/lib/mock-players";
-import { Search, Download, Calendar, ChevronLeft, ChevronRight, X, ShieldCheck } from "lucide-react";
+import { Search, Download, Calendar, ChevronLeft, ChevronRight, ShieldCheck } from "lucide-react";
+import { OrderDetailsModal } from "./OrderDetailsModal";
 
 const inputCls =
   "w-full h-8 px-2 text-[12px] rounded-sm border border-panel-border bg-panel focus:outline-none focus:border-info placeholder:text-muted-foreground/60";
@@ -65,7 +66,6 @@ export function ReviewWithdrawalPage() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [auditTarget, setAuditTarget] = useState<Withdrawal | null>(null);
-  const [auditNote, setAuditNote] = useState("");
 
   const update = <K extends keyof Filters>(k: K, v: Filters[K]) =>
     setFilters((f) => ({ ...f, [k]: v }));
@@ -399,10 +399,15 @@ export function ReviewWithdrawalPage() {
                         <button
                           onClick={() => {
                             setAuditTarget(w);
-                            setAuditNote("");
                           }}
                           className="text-info hover:underline"
+                        >
+                          details
+                        </button>
+                        <button
+                          onClick={() => setAuditTarget(w)}
                           disabled={w.status !== "Pending"}
+                          className="text-success hover:underline disabled:opacity-40"
                         >
                           audit
                         </button>
@@ -469,83 +474,35 @@ export function ReviewWithdrawalPage() {
 
       {/* Audit modal */}
       {auditTarget && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-6"
-          onClick={() => setAuditTarget(null)}
-        >
-          <div
-            className="bg-panel rounded-md w-full max-w-md border border-panel-border shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-4 h-11 border-b border-panel-border">
-              <div className="text-[14px] font-medium">Audit Withdrawal</div>
-              <button
-                onClick={() => setAuditTarget(null)}
-                className="text-muted-foreground hover:text-danger"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-4 space-y-2 text-[12.5px]">
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-28">Order No.</span>
-                <span>{auditTarget.orderNo}</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-28">playerID</span>
-                <span>{auditTarget.playerID}</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-28">Apply Amount</span>
-                <span>{auditTarget.applyAmount.toLocaleString()}</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-28">Actual Amount</span>
-                <span>{auditTarget.actualAmount.toLocaleString()}</span>
-              </div>
-              <div>
-                <label className="text-muted-foreground">Note</label>
-                <textarea
-                  className={inputCls + " h-20 py-1"}
-                  value={auditNote}
-                  onChange={(e) => setAuditNote(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="px-4 py-3 border-t border-panel-border flex items-center justify-end gap-2">
-              <button
-                onClick={() => {
-                  updateRow(auditTarget.orderNo, {
-                    status: "Reject",
-                    auditor: "Minmin",
-                  });
-                  setAuditTarget(null);
-                }}
-                className="h-8 px-3 rounded-sm bg-danger text-danger-foreground text-[12px]"
-              >
-                Reject
-              </button>
-              <button
-                onClick={() => {
-                  updateRow(auditTarget.orderNo, {
-                    status: "Audited",
-                    auditor: "Minmin",
-                  });
-                  setAuditTarget(null);
-                }}
-                className="h-8 px-3 rounded-sm bg-success text-success-foreground text-[12px]"
-              >
-                Approve
-              </button>
-              <button
-                onClick={() => setAuditTarget(null)}
-                className="h-8 px-3 rounded-sm border border-panel-border text-[12px]"
-              >
-                {t("close")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <OrderDetailsModal
+          withdrawal={auditTarget}
+          player={playerMap.get(auditTarget.playerID)}
+          onClose={() => setAuditTarget(null)}
+          footer={
+            auditTarget.status === "Pending" ? (
+              <>
+                <button
+                  onClick={() => {
+                    updateRow(auditTarget.orderNo, { status: "Reject", auditor: "Minmin" });
+                    setAuditTarget(null);
+                  }}
+                  className="h-8 px-5 rounded-sm bg-danger text-danger-foreground text-[12.5px]"
+                >
+                  Reject
+                </button>
+                <button
+                  onClick={() => {
+                    updateRow(auditTarget.orderNo, { status: "Audited", auditor: "Minmin" });
+                    setAuditTarget(null);
+                  }}
+                  className="h-8 px-5 rounded-sm bg-info text-info-foreground text-[12.5px]"
+                >
+                  audit
+                </button>
+              </>
+            ) : null
+          }
+        />
       )}
     </div>
   );
