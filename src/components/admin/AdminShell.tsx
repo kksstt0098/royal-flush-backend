@@ -26,7 +26,9 @@ export type PageKey =
   | "withdrawalPayment"
   | "onlineRecharge"
   | "offlineRecharge"
-  | "quickRecharge";
+  | "quickRecharge"
+  | "lobbyBanner"
+  | "promoBanner";
 
 type NavItem = { key: keyof typeof dict; page?: PageKey };
 type NavGroup = {
