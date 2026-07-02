@@ -24,6 +24,7 @@ export type PageKey =
   | "reviewWithdrawal"
   | "withdrawalPayment"
   | "onlineRecharge"
+  | "offlineRecharge"
   | "quickRecharge";
 
 type NavItem = { key: keyof typeof dict; page?: PageKey };
@@ -70,7 +71,7 @@ const groups: NavGroup[] = [
     icon: RechargeIcon,
     children: [
       { key: "onlineRecharge", page: "onlineRecharge" },
-      { key: "offlineRecharge" },
+      { key: "offlineRecharge", page: "offlineRecharge" },
       { key: "quickRecharge", page: "quickRecharge" },
     ],
   },
