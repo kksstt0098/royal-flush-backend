@@ -18,7 +18,11 @@ import {
   CreditCard as RechargeIcon,
 } from "lucide-react";
 
-export type PageKey = "playerQuery" | "withdrawalOrder" | "reviewWithdrawal";
+export type PageKey =
+  | "playerQuery"
+  | "withdrawalOrder"
+  | "reviewWithdrawal"
+  | "withdrawalPayment";
 
 type NavItem = { key: keyof typeof dict; page?: PageKey };
 type NavGroup = {
@@ -53,7 +57,7 @@ const groups: NavGroup[] = [
     children: [
       { key: "withdrawalOrder", page: "withdrawalOrder" },
       { key: "reviewWithdrawal", page: "reviewWithdrawal" },
-      { key: "withdrawalPayment" },
+      { key: "withdrawalPayment", page: "withdrawalPayment" },
       { key: "withdrawalReissue" },
       { key: "tmsConfig" },
     ],
