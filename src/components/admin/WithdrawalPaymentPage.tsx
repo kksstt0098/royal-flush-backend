@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useT } from "@/lib/i18n";
-import { mockWithdrawals, type Withdrawal } from "@/lib/mock-withdrawals";
+import { type Withdrawal } from "@/lib/mock-withdrawals";
+import { useWithdrawals, updateWithdrawal, updateWithdrawals } from "@/lib/withdrawal-store";
 import { mockPlayers } from "@/lib/mock-players";
 import { Search, Download, Calendar, ChevronLeft, ChevronRight, ArrowRightLeft } from "lucide-react";
 import { OrderDetailsModal } from "./OrderDetailsModal";
@@ -55,87 +56,23 @@ const emptyFilters: Filters = {
   timeRefresh: "",
 };
 
-// seed some audited/ready-for-payment rows similar to the reference image
-const seedRows: Withdrawal[] = [
-  {
-    orderNo: "T2512271742" + "4588",
-    playerID: "6223468",
-    level: "NORMAL",
-    sourceUserId: "5015968",
-    channelCode: "1026",
-    payoutMode: "KBZPay",
-    accountNo: "09256644689",
-    applyAmount: 10000,
-    fee: 0,
-    actualAmount: 10000,
-    channel: "KBZPay",
-    outTradeNo: "",
-    status: "Audited",
-    createTime: "2025-12-27 17:42",
-    paymentTime: "",
-    auditor: "Grey107",
-    transferor: "",
-    lockUser: "",
-    notifyTime: "",
-    firstWithdrawal: false,
-    lockFlag: "unlocked",
-  },
-  {
-    orderNo: "T25122717401" + "04586",
-    playerID: "16254788",
-    level: "NORMAL",
-    sourceUserId: "1000",
-    channelCode: "1000",
-    payoutMode: "KBZPay",
-    accountNo: "09672122872",
-    applyAmount: 4500,
-    fee: 0,
-    actualAmount: 4500,
-    channel: "KBZPay",
-    outTradeNo: "",
-    status: "Audited",
-    createTime: "2025-12-27 17:40",
-    paymentTime: "",
-    auditor: "Masha",
-    transferor: "",
-    lockUser: "",
-    notifyTime: "",
-    firstWithdrawal: false,
-    lockFlag: "unlocked",
-  },
-  {
-    orderNo: "T2512271656314555",
-    playerID: "7647648",
-    level: "NORMAL",
-    sourceUserId: "",
-    channelCode: "",
-    payoutMode: "Card",
-    accountNo: "09897963582",
-    applyAmount: 9500,
-    fee: 0,
-    actualAmount: 9500,
-    channel: "Card",
-    outTradeNo: "",
-    status: "Audited",
-    createTime: "2025-12-27 16:56",
-    paymentTime: "",
-    auditor: "Minminsoe",
-    transferor: "",
-    lockUser: "",
-    notifyTime: "",
-    firstWithdrawal: false,
-    lockFlag: "unlocked",
-  },
-];
-
 export function WithdrawalPaymentPage() {
   const { t } = useT();
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [applied, setApplied] = useState<Filters>(emptyFilters);
-  const [rows, setRows] = useState<Withdrawal[]>([
-    ...seedRows,
-    ...mockWithdrawals.filter((w) => w.status === "Audited" || w.status === "Paying Out"),
-  ]);
+  const allRows = useWithdrawals();
+  // Payment page handles orders already audited and beyond.
+  const rows = useMemo(
+    () =>
+      allRows.filter(
+        (w) =>
+          w.status === "Audited" ||
+          w.status === "Paying Out" ||
+          w.status === "Successful" ||
+          w.status === "Failed",
+      ),
+    [allRows],
+  );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
@@ -203,14 +140,14 @@ export function WithdrawalPaymentPage() {
   };
 
   const updateRow = (orderNo: string, patch: Partial<Withdrawal>) =>
-    setRows((rs) => rs.map((r) => (r.orderNo === orderNo ? { ...r, ...patch } : r)));
+    updateWithdrawal(orderNo, patch);
 
   const doTransferBulk = () => {
     if (selected.size === 0) {
       alert("Please select orders to transfer");
       return;
     }
-    setRows((rs) =>
+    updateWithdrawals((rs) =>
       rs.map((r) =>
         selected.has(r.orderNo) && r.status === "Audited"
           ? {
