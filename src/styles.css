@@ -59,11 +59,21 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-panel: var(--panel);
+  --color-panel-border: var(--panel-border);
 }
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  --background: oklch(0.985 0.002 250);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
@@ -95,6 +105,19 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+
+  /* Admin status colors */
+  --success: oklch(0.68 0.17 145);
+  --success-foreground: oklch(1 0 0);
+  --info: oklch(0.6 0.18 250);
+  --info-foreground: oklch(1 0 0);
+  --warning: oklch(0.75 0.16 65);
+  --warning-foreground: oklch(1 0 0);
+  --danger: oklch(0.63 0.22 25);
+  --danger-foreground: oklch(1 0 0);
+  --panel: oklch(1 0 0);
+  --panel-border: oklch(0.92 0.01 255);
+  --tab-active: oklch(0.68 0.17 145);
 }
 
 .dark {
