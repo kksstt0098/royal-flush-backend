@@ -17,7 +17,7 @@ function Landing() {
       navigate({ to: "/auth" });
       return;
     }
-    navigate({ to: (isStaff(roles) ? "/_authenticated/admin" : "/_authenticated/player") as never });
+    navigate({ to: isStaff(roles) ? "/admin" : "/player" });
   }, [loading, rolesLoading, user, roles, navigate]);
 
   return (
