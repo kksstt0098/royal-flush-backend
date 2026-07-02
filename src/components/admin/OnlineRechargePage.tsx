@@ -113,15 +113,24 @@ export function OnlineRechargePage() {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as unknown as {
+        from: (t: string) => {
+          select: (s: string) => {
+            order: (
+              c: string,
+              o: { ascending: boolean },
+            ) => { limit: (n: number) => Promise<{ data: Record<string, unknown>[] | null }> };
+          };
+        };
+      })
         .from("deposits")
         .select(
-          "id,order_no,player_id,amount,coins,channel,status,created_at,source_user_id,channel_code,bank_type,account_no,bonus_amount,actual_amount,notify_time,profiles:profiles!deposits_player_id_fkey(level)" as string,
+          "id,order_no,player_id,amount,coins,channel,status,created_at,source_user_id,channel_code,bank_type,account_no,bonus_amount,actual_amount,notify_time,profiles:profiles!deposits_player_id_fkey(level)",
         )
         .order("created_at", { ascending: false })
         .limit(500);
       if (!cancelled) {
-        const mapped = (data ?? []).map((r: Record<string, unknown>) => ({
+        const mapped = (data ?? []).map((r) => ({
           ...(r as object),
           player_level:
             (r as { profiles?: { level?: number | null } | null }).profiles?.level ?? null,
