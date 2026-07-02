@@ -21,6 +21,19 @@ export type Player = {
   lastLogin: string;
   remark: string;
   status: "active" | "disabled";
+  safeCoins?: number;
+  addr?: string;
+  goldInTransfer?: number;
+  totalPayedTimes?: number;
+  totalWithdrawTimes?: number;
+  totalPayout?: number;
+  registerMac?: string;
+  registerIp?: string;
+  registerCountry?: string;
+  loginIp?: string;
+  loginCountry?: string;
+  payedRecords?: { orderNo: string; time: string; amount: number; coins: number }[];
+  withdrawalRecords?: { orderNo: string; time: string; amount: number; coins: number }[];
 };
 
 export const mockPlayers: Player[] = [
