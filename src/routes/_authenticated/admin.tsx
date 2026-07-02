@@ -6,6 +6,7 @@ import { PlayerQueryPage } from "@/components/admin/PlayerQueryPage";
 import { WithdrawalOrderPage } from "@/components/admin/WithdrawalOrderPage";
 import { ReviewWithdrawalPage } from "@/components/admin/ReviewWithdrawalPage";
 import { WithdrawalPaymentPage } from "@/components/admin/WithdrawalPaymentPage";
+import { OnlineRechargePage } from "@/components/admin/OnlineRechargePage";
 import { useSession, useRoles, isStaff } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -99,6 +100,8 @@ function AdminPage() {
           <WithdrawalOrderPage />
         ) : active === "reviewWithdrawal" ? (
           <ReviewWithdrawalPage />
+        ) : active === "onlineRecharge" ? (
+          <OnlineRechargePage />
         ) : (
           <WithdrawalPaymentPage />
         )}
