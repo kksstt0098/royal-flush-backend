@@ -245,10 +245,13 @@ export function WithdrawalOrderPage() {
   const updateRow = (orderNo: string, patch: Partial<Withdrawal>) =>
     updateWithdrawal(orderNo, patch);
 
-  const levels = useMemo(() => Array.from(new Set(mockWithdrawals.map((w) => w.level))), []);
+  const levels = useMemo(
+    () => Array.from(new Set(rows.map((w) => w.level))),
+    [rows],
+  );
   const payoutModes = useMemo(
-    () => Array.from(new Set(mockWithdrawals.map((w) => w.payoutMode))),
-    [],
+    () => Array.from(new Set(rows.map((w) => w.payoutMode))),
+    [rows],
   );
   const playerMap = useMemo(() => {
     const m = new Map<string, (typeof mockPlayers)[number]>();
