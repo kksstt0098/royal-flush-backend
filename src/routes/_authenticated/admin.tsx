@@ -110,6 +110,10 @@ function AdminPage() {
           <OfflineRechargePage />
         ) : active === "quickRecharge" ? (
           <QuickRechargePage />
+        ) : active === "lobbyBanner" ? (
+          <LobbyBannerPage />
+        ) : active === "promoBanner" ? (
+          <PromoBannerPage />
         ) : (
           <WithdrawalPaymentPage />
         )}
