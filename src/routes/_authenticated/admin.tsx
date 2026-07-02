@@ -9,6 +9,8 @@ import { WithdrawalPaymentPage } from "@/components/admin/WithdrawalPaymentPage"
 import { OnlineRechargePage } from "@/components/admin/OnlineRechargePage";
 import { OfflineRechargePage } from "@/components/admin/OfflineRechargePage";
 import { QuickRechargePage } from "@/components/admin/QuickRechargePage";
+import { LobbyBannerPage } from "@/components/admin/LobbyBannerPage";
+import { PromoBannerPage } from "@/components/admin/PromoBannerPage";
 import { useSession, useRoles, isStaff } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -108,6 +110,10 @@ function AdminPage() {
           <OfflineRechargePage />
         ) : active === "quickRecharge" ? (
           <QuickRechargePage />
+        ) : active === "lobbyBanner" ? (
+          <LobbyBannerPage />
+        ) : active === "promoBanner" ? (
+          <PromoBannerPage />
         ) : (
           <WithdrawalPaymentPage />
         )}

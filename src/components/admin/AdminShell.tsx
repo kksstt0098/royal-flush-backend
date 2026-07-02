@@ -16,6 +16,7 @@ import {
   BarChart3,
   Banknote,
   CreditCard as RechargeIcon,
+  Megaphone,
 } from "lucide-react";
 
 export type PageKey =
@@ -25,7 +26,9 @@ export type PageKey =
   | "withdrawalPayment"
   | "onlineRecharge"
   | "offlineRecharge"
-  | "quickRecharge";
+  | "quickRecharge"
+  | "lobbyBanner"
+  | "promoBanner";
 
 type NavItem = { key: keyof typeof dict; page?: PageKey };
 type NavGroup = {
@@ -73,6 +76,15 @@ const groups: NavGroup[] = [
       { key: "onlineRecharge", page: "onlineRecharge" },
       { key: "offlineRecharge", page: "offlineRecharge" },
       { key: "quickRecharge", page: "quickRecharge" },
+    ],
+  },
+  {
+    key: "adsBanner",
+    label: "adsBanner",
+    icon: Megaphone,
+    children: [
+      { key: "lobbyBanner", page: "lobbyBanner" },
+      { key: "promoBanner", page: "promoBanner" },
     ],
   },
 ];
