@@ -245,7 +245,7 @@ export function PlayerQueryPage() {
     <div className="space-y-3">
       {/* Filter panel */}
       <section className="bg-panel border border-panel-border rounded-sm p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-6 gap-x-6 gap-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-8 gap-x-6 gap-y-3">
           <Field label={t("playerID")}>
             <input
               className={inputCls}
@@ -300,6 +300,28 @@ export function PlayerQueryPage() {
               onChange={(e) => setF("email", e.target.value)}
             />
           </Field>
+          <Field label={t("ipAddr")}>
+            <input
+              className={inputCls}
+              placeholder="login/register ip"
+              value={filters.ipAddr}
+              onChange={(e) => setF("ipAddr", e.target.value)}
+            />
+          </Field>
+          <Field label={t("level")}>
+            <select
+              className={inputCls}
+              value={filters.level}
+              onChange={(e) => setF("level", e.target.value)}
+            >
+              <option value="">{t("all")}</option>
+              {levelOptions.map((lv) => (
+                <option key={lv} value={lv}>
+                  {lv}
+                </option>
+              ))}
+            </select>
+          </Field>
           <Field label={t("channelCode")}>
             <input
               className={inputCls}
@@ -308,13 +330,42 @@ export function PlayerQueryPage() {
               onChange={(e) => setF("channelCode", e.target.value)}
             />
           </Field>
+          <div className="md:col-span-2">
+            <Field label={t("vipLevel")}>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  className={inputCls}
+                  value={filters.vipFrom}
+                  onChange={(e) => setF("vipFrom", e.target.value)}
+                />
+                <span className="text-muted-foreground text-[12px]">{t("to")}</span>
+                <input
+                  type="number"
+                  min={0}
+                  className={inputCls}
+                  value={filters.vipTo}
+                  onChange={(e) => setF("vipTo", e.target.value)}
+                />
+              </div>
+            </Field>
+          </div>
+          <Field label={t("bankAccount")}>
+            <input
+              className={inputCls}
+              placeholder="Bank Account"
+              value={filters.bankAccount}
+              onChange={(e) => setF("bankAccount", e.target.value)}
+            />
+          </Field>
           <Field label={t("status")}>
             <select
               className={inputCls}
               value={filters.status}
               onChange={(e) => setF("status", e.target.value as Filters["status"])}
             >
-              <option value="">{t("all")}</option>
+              <option value="">{t("select")}</option>
               <option value="active">{t("active")}</option>
               <option value="disabled">{t("disabled")}</option>
             </select>
