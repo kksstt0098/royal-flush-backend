@@ -22,7 +22,8 @@ export type PageKey =
   | "playerQuery"
   | "withdrawalOrder"
   | "reviewWithdrawal"
-  | "withdrawalPayment";
+  | "withdrawalPayment"
+  | "onlineRecharge";
 
 type NavItem = { key: keyof typeof dict; page?: PageKey };
 type NavGroup = {
@@ -67,7 +68,7 @@ const groups: NavGroup[] = [
     label: "recharge",
     icon: RechargeIcon,
     children: [
-      { key: "onlineRecharge" },
+      { key: "onlineRecharge", page: "onlineRecharge" },
       { key: "offlineRecharge" },
       { key: "quickRecharge" },
     ],
