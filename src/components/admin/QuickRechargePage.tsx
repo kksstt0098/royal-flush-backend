@@ -439,6 +439,208 @@ export function QuickRechargePage() {
           </div>
         </div>
       )}
+
+      {/* History with filters */}
+      <div className="bg-panel border border-panel-border rounded-sm p-3">
+        <div className="text-sm font-semibold mb-3">Credit History</div>
+        <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-6 gap-x-3 gap-y-2">
+          <Field label={t("createTimeShort")}>
+            <div className="flex items-center gap-1">
+              <DateInput value={filters.createFrom} onChange={(v) => updateF("createFrom", v)} />
+              <span className="text-[12px] text-muted-foreground">{t("to")}</span>
+              <DateInput value={filters.createTo} onChange={(v) => updateF("createTo", v)} />
+            </div>
+          </Field>
+          <Field label={t("orderNo")}>
+            <input
+              className={inputCls}
+              placeholder="OrderNo"
+              value={filters.orderNo}
+              onChange={(e) => updateF("orderNo", e.target.value)}
+            />
+          </Field>
+          <Field label={t("playerID")}>
+            <input
+              className={inputCls}
+              placeholder="playerID"
+              value={filters.playerID}
+              onChange={(e) => updateF("playerID", e.target.value)}
+            />
+          </Field>
+          <Field label="Credit Type">
+            <select
+              className={inputCls}
+              value={filters.creditType}
+              onChange={(e) => updateF("creditType", e.target.value)}
+            >
+              <option value="">{t("all")}</option>
+              <option value="Bonus">Bonus</option>
+              <option value="Manual">Manual Deposit</option>
+            </select>
+          </Field>
+          <Field label={t("startAmount")}>
+            <input
+              className={inputCls}
+              placeholder="Start Amount"
+              value={filters.startAmount}
+              onChange={(e) => updateF("startAmount", e.target.value)}
+            />
+          </Field>
+          <Field label={t("endAmount")}>
+            <input
+              className={inputCls}
+              placeholder="End Amount"
+              value={filters.endAmount}
+              onChange={(e) => updateF("endAmount", e.target.value)}
+            />
+          </Field>
+          <Field label={t("remark")}>
+            <input
+              className={inputCls}
+              placeholder="Remark contains…"
+              value={filters.remark}
+              onChange={(e) => updateF("remark", e.target.value)}
+            />
+          </Field>
+          <div className="flex items-center gap-2 col-span-1 md:col-span-3 xl:col-span-5 justify-end">
+            <button
+              onClick={doSearch}
+              className="h-8 px-3 rounded-sm bg-info text-info-foreground text-[12px] flex items-center gap-1 hover:bg-info/90"
+            >
+              <Search className="w-3.5 h-3.5" />
+              {t("search")}
+            </button>
+            <button
+              onClick={doReset}
+              className="h-8 px-3 rounded-sm bg-warning text-warning-foreground text-[12px] flex items-center gap-1 hover:bg-warning/90"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              {t("reset")}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between bg-panel border border-panel-border rounded-sm px-3 py-2">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px]">
+          {tabDefs.map((tab) => {
+            const active = tab.key === activeTab;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setActiveTab(tab.key);
+                  setPage(1);
+                }}
+                className={
+                  "flex items-center gap-1 " +
+                  (active ? "text-info font-medium" : "text-foreground/80 hover:text-info")
+                }
+              >
+                <span>{tab.label}</span>
+                <span className="text-muted-foreground">
+                  【 <span className="text-danger">{counts[tab.key] ?? 0}</span> 】
+                </span>
+              </button>
+            );
+          })}
+          <span className="flex items-center gap-1 text-foreground/80">
+            <span>Total Amount</span>
+            <span className="text-muted-foreground">
+              【 <span className="text-danger">{totalAmount.toLocaleString()}</span> 】
+            </span>
+          </span>
+        </div>
+        <button
+          onClick={doExport}
+          className="h-8 px-3 rounded-sm bg-danger text-danger-foreground text-[12px] flex items-center gap-1 hover:bg-danger/90"
+        >
+          <Download className="w-3.5 h-3.5" />
+          {t("export")}
+        </button>
+      </div>
+
+      <div className="bg-panel border border-panel-border rounded-sm overflow-auto">
+        <table className="w-full text-[12px]">
+          <thead className="bg-muted/50 text-foreground/70">
+            <tr className="[&>th]:h-9 [&>th]:px-2 [&>th]:text-left [&>th]:font-medium [&>th]:whitespace-nowrap">
+              <th>OrderNo.</th>
+              <th>playerID</th>
+              <th>Credit Type</th>
+              <th>Amount</th>
+              <th>Coins</th>
+              <th>Remark</th>
+              <th>Created By</th>
+              <th>Create Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pageRows.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="text-center py-10 text-muted-foreground">
+                  No data
+                </td>
+              </tr>
+            ) : (
+              pageRows.map((d) => (
+                <tr
+                  key={d.id}
+                  className="border-t border-panel-border hover:bg-muted/30 [&>td]:px-2 [&>td]:py-2 [&>td]:whitespace-nowrap"
+                >
+                  <td className="text-info">{d.order_no}</td>
+                  <td className="text-info">{d.player_id}</td>
+                  <td>
+                    <span
+                      className={
+                        "inline-block px-2 py-0.5 rounded text-[11.5px] " +
+                        (d.credit_type === "Bonus"
+                          ? "bg-info/15 text-info"
+                          : "bg-success/15 text-success")
+                      }
+                    >
+                      {d.credit_type === "Manual" ? "Manual Deposit" : d.credit_type}
+                    </span>
+                  </td>
+                  <td>{Number(d.amount).toLocaleString()}</td>
+                  <td>{Number(d.coins).toLocaleString()}</td>
+                  <td className="max-w-[240px] truncate" title={d.remark ?? ""}>
+                    {d.remark ?? ""}
+                  </td>
+                  <td>{d.created_by_name ?? ""}</td>
+                  <td>{new Date(d.created_at).toLocaleString()}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex items-center justify-end gap-2 text-[12px] px-3 py-2">
+        <span className="text-muted-foreground">
+          {t("total")} {visible.length}
+        </span>
+        <span className="border border-panel-border rounded-sm px-2 h-7 flex items-center">
+          {pageSize}
+          {t("perPage")}
+        </span>
+        <button
+          disabled={page <= 1}
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+          className="w-7 h-7 border border-panel-border rounded-sm flex items-center justify-center disabled:opacity-40"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" />
+        </button>
+        <span className="w-7 h-7 rounded-sm bg-info text-info-foreground flex items-center justify-center">
+          {page}
+        </span>
+        <button
+          disabled={page >= totalPages}
+          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          className="w-7 h-7 border border-panel-border rounded-sm flex items-center justify-center disabled:opacity-40"
+        >
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
     </div>
   );
 }
