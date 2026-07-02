@@ -4,6 +4,7 @@ import { LangProvider } from "@/lib/i18n";
 import { AdminShell, type PageKey } from "@/components/admin/AdminShell";
 import { PlayerQueryPage } from "@/components/admin/PlayerQueryPage";
 import { WithdrawalOrderPage } from "@/components/admin/WithdrawalOrderPage";
+import { ReviewWithdrawalPage } from "@/components/admin/ReviewWithdrawalPage";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -34,7 +35,13 @@ function Index() {
         openTabs={tabs}
         onCloseTab={closeTab}
       >
-        {active === "playerQuery" ? <PlayerQueryPage /> : <WithdrawalOrderPage />}
+        {active === "playerQuery" ? (
+          <PlayerQueryPage />
+        ) : active === "withdrawalOrder" ? (
+          <WithdrawalOrderPage />
+        ) : (
+          <ReviewWithdrawalPage />
+        )}
       </AdminShell>
     </LangProvider>
   );
