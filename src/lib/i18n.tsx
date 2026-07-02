@@ -113,6 +113,7 @@ export const dict: Dict = {
   onlineRecharge: { en: "Online Recharge", my: "အွန်လိုင်းငွေဖြည့်" },
   offlineRecharge: { en: "Offline Recharge", my: "အော့ဖ်လိုင်းငွေဖြည့်" },
   quickRecharge: { en: "Quick Recharge", my: "အမြန်ငွေဖြည့်" },
+  firstRecharge: { en: "First Recharge", my: "ပထမငွေဖြည့်" },
   sourceUserId: { en: "Source userId", my: "မူလ userId" },
   payoutMode: { en: "Payout Mode", my: "ငွေထုတ်နည်း" },
   accountNo: { en: "Account No.", my: "အကောင့်နံပါတ်" },
