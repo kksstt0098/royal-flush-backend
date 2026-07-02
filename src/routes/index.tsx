@@ -1,51 +1,31 @@
-import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { LangProvider } from "@/lib/i18n";
-import { AdminShell, type PageKey } from "@/components/admin/AdminShell";
-import { PlayerQueryPage } from "@/components/admin/PlayerQueryPage";
-import { WithdrawalOrderPage } from "@/components/admin/WithdrawalOrderPage";
-import { ReviewWithdrawalPage } from "@/components/admin/ReviewWithdrawalPage";
-import { WithdrawalPaymentPage } from "@/components/admin/WithdrawalPaymentPage";
+import { useEffect } from "react";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useSession, useRoles, isStaff } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: Landing,
 });
 
-function Index() {
-  const [active, setActive] = useState<PageKey>("playerQuery");
-  const [tabs, setTabs] = useState<PageKey[]>(["playerQuery"]);
+function Landing() {
+  const { user, loading } = useSession();
+  const { roles, loading: rolesLoading } = useRoles(user?.id);
+  const navigate = useNavigate();
 
-  const navigate = (p: PageKey) => {
-    setActive(p);
-    setTabs((ts) => (ts.includes(p) ? ts : [...ts, p]));
-  };
-  const closeTab = (p: PageKey) => {
-    setTabs((ts) => {
-      const next = ts.filter((t) => t !== p);
-      if (next.length === 0) return ts;
-      if (p === active) setActive(next[next.length - 1]);
-      return next;
-    });
-  };
+  useEffect(() => {
+    if (loading || rolesLoading) return;
+    if (!user) {
+      navigate({ to: "/auth" });
+      return;
+    }
+    navigate({ to: (isStaff(roles) ? "/_authenticated/admin" : "/_authenticated/player") as never });
+  }, [loading, rolesLoading, user, roles, navigate]);
 
   return (
-    <LangProvider>
-      <AdminShell
-        activePage={active}
-        onNavigate={navigate}
-        openTabs={tabs}
-        onCloseTab={closeTab}
-      >
-        {active === "playerQuery" ? (
-          <PlayerQueryPage />
-        ) : active === "withdrawalOrder" ? (
-          <WithdrawalOrderPage />
-        ) : active === "reviewWithdrawal" ? (
-          <ReviewWithdrawalPage />
-        ) : (
-          <WithdrawalPaymentPage />
-        )}
-      </AdminShell>
-    </LangProvider>
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center space-y-3">
+        <div className="text-sm text-muted-foreground">Loading…</div>
+        <Link to="/auth" className="text-info hover:underline text-sm">Sign in</Link>
+      </div>
+    </div>
   );
 }
