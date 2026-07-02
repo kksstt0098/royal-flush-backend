@@ -76,25 +76,12 @@ export function useMailbox(playerID?: string) {
       listeners.delete(l);
     };
   }, []);
-  return playerID
-    ? snap.filter((m) => m.playerID === playerID || m.playerID.startsWith(playerID))
-    : snap;
+  return playerID ? snap.filter((m) => m.playerID === playerID) : snap;
 }
 
 export async function sendMail(m: Omit<Mail, "id" | "time" | "read">) {
-  // playerID may be short uuid (first 8 chars) coming from admin UI — resolve to full uuid
-  let playerFull = m.playerID;
-  if (playerFull.length < 36) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("id")
-      .ilike("id", `${playerFull}%`)
-      .limit(1)
-      .maybeSingle();
-    if (data) playerFull = data.id;
-  }
   const { error } = await supabase.rpc("send_mail", {
-    _player_id: playerFull,
+    _player_id: m.playerID,
     _subject: m.subject,
     _body: m.body,
   });
