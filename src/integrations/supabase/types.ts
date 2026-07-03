@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      ads_categories: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          icon_url: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          icon_url?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          icon_url?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -290,6 +323,7 @@ export type Database = {
       promo_banners: {
         Row: {
           active: boolean
+          category_id: string | null
           content_html: string
           created_at: string
           created_by: string | null
@@ -301,6 +335,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          category_id?: string | null
           content_html?: string
           created_at?: string
           created_by?: string | null
@@ -312,6 +347,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          category_id?: string | null
           content_html?: string
           created_at?: string
           created_by?: string | null
@@ -321,7 +357,15 @@ export type Database = {
           sort_order?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "promo_banners_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ads_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
