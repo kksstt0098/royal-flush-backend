@@ -1,70 +1,47 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Loader2, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
-import { RichEditor } from "./RichEditor";
+import { ArrowDown, ArrowUp, ImageIcon, Loader2, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 
-type Banner = {
+type Category = {
   id: string;
   name: string;
-  image_url: string;
-  content_html: string;
+  icon_url: string | null;
   sort_order: number;
   active: boolean;
   created_at: string;
-  category_id: string | null;
 };
 
 type FormState = {
   id?: string;
   name: string;
-  image_url: string;
-  content_html: string;
+  icon_url: string;
   sort_order: number;
   active: boolean;
-  category_id: string | null;
 };
 
-const emptyForm: FormState = {
-  name: "",
-  image_url: "",
-  content_html: "",
-  sort_order: 0,
-  active: true,
-  category_id: null,
-};
+const emptyForm: FormState = { name: "", icon_url: "", sort_order: 0, active: true };
 
-const db = supabase.from("promo_banners" as never) as any;
-const catDb = supabase.from("ads_categories") as any;
+const db = supabase.from("ads_categories") as any;
 
-type CategoryOption = { id: string; name: string; active: boolean };
-
-export function PromoBannerPage() {
-  const [rows, setRows] = useState<Banner[]>([]);
-  const [categories, setCategories] = useState<CategoryOption[]>([]);
+export function AdsCategoryPage() {
+  const [rows, setRows] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     setLoading(true);
-    const [{ data, error }, catRes] = await Promise.all([
-      db
+    const { data, error } = await db
       .select("*")
       .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true }),
-      catDb
-      .select("id,name,active")
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true }),
-    ]);
+      .order("created_at", { ascending: true });
     setLoading(false);
     if (error) return toast.error(error.message);
-    setRows((data ?? []) as Banner[]);
-    if (!catRes.error) setCategories((catRes.data ?? []) as CategoryOption[]);
+    setRows((data ?? []) as Category[]);
   };
 
   useEffect(() => {
@@ -76,15 +53,13 @@ export function PromoBannerPage() {
     setOpen(true);
   };
 
-  const openEdit = (b: Banner) => {
+  const openEdit = (c: Category) => {
     setForm({
-      id: b.id,
-      name: b.name,
-      image_url: b.image_url,
-      content_html: b.content_html ?? "",
-      sort_order: b.sort_order,
-      active: b.active,
-      category_id: b.category_id ?? null,
+      id: c.id,
+      name: c.name,
+      icon_url: c.icon_url ?? "",
+      sort_order: c.sort_order,
+      active: c.active,
     });
     setOpen(true);
   };
@@ -99,7 +74,7 @@ export function PromoBannerPage() {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop() || "png";
-      const path = `hero/${crypto.randomUUID()}.${ext}`;
+      const path = `category-icons/${crypto.randomUUID()}.${ext}`;
       const up = await supabase.storage
         .from("promo-banners")
         .upload(path, file, { cacheControl: "31536000", upsert: false });
@@ -108,8 +83,8 @@ export function PromoBannerPage() {
         .from("promo-banners")
         .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
       if (signed.error) throw signed.error;
-      setForm((f) => ({ ...f, image_url: signed.data.signedUrl }));
-      toast.success("Image uploaded");
+      setForm((f) => ({ ...f, icon_url: signed.data.signedUrl }));
+      toast.success("Icon uploaded");
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
     } finally {
@@ -119,46 +94,43 @@ export function PromoBannerPage() {
 
   const save = async () => {
     if (!form.name.trim()) return toast.error("Name is required");
-    if (!form.image_url) return toast.error("Hero image is required");
     setSaving(true);
     const payload = {
       name: form.name.trim(),
-      image_url: form.image_url,
-      content_html: form.content_html,
+      icon_url: form.icon_url || null,
       sort_order: form.sort_order,
       active: form.active,
-      category_id: form.category_id,
     };
     const q = form.id
       ? await db.update(payload).eq("id", form.id)
       : await db.insert(payload);
     setSaving(false);
     if (q.error) return toast.error(q.error.message);
-    toast.success(form.id ? "Promo banner updated" : "Promo banner created");
+    toast.success(form.id ? "Category updated" : "Category created");
     close();
     load();
   };
 
-  const remove = async (b: Banner) => {
-    if (!confirm(`Delete promo banner "${b.name}"?`)) return;
-    const { error } = await db.delete().eq("id", b.id);
+  const remove = async (c: Category) => {
+    if (!confirm(`Delete category "${c.name}"?`)) return;
+    const { error } = await db.delete().eq("id", c.id);
     if (error) return toast.error(error.message);
     toast.success("Deleted");
     load();
   };
 
-  const move = async (b: Banner, dir: -1 | 1) => {
-    const idx = rows.findIndex((r) => r.id === b.id);
+  const move = async (c: Category, dir: -1 | 1) => {
+    const idx = rows.findIndex((r) => r.id === c.id);
     const swap = rows[idx + dir];
     if (!swap) return;
-    const a = await db.update({ sort_order: swap.sort_order }).eq("id", b.id);
-    const c = await db.update({ sort_order: b.sort_order }).eq("id", swap.id);
-    if (a.error || c.error) return toast.error((a.error ?? c.error).message);
+    const a = await db.update({ sort_order: swap.sort_order }).eq("id", c.id);
+    const b = await db.update({ sort_order: c.sort_order }).eq("id", swap.id);
+    if (a.error || b.error) return toast.error((a.error ?? b.error).message);
     load();
   };
 
-  const toggleActive = async (b: Banner) => {
-    const { error } = await db.update({ active: !b.active }).eq("id", b.id);
+  const toggleActive = async (c: Category) => {
+    const { error } = await db.update({ active: !c.active }).eq("id", c.id);
     if (error) return toast.error(error.message);
     load();
   };
@@ -167,16 +139,17 @@ export function PromoBannerPage() {
     <div className="space-y-4">
       <div className="bg-panel border border-panel-border rounded-sm p-4 flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold">Promo Banner</h2>
+          <h2 className="text-base font-semibold">Ads Category</h2>
           <p className="text-xs text-muted-foreground mt-1">
-            Manage promotional banners with rich content (tables, images, colors, formatting).
+            Categories act as sidebar buttons in the frontend promo section. Each promo banner
+            can be assigned to a category.
           </p>
         </div>
         <button
           onClick={openNew}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-sm bg-primary text-primary-foreground hover:opacity-90"
         >
-          <Plus className="w-4 h-4" /> New Promo
+          <Plus className="w-4 h-4" /> New Category
         </button>
       </div>
 
@@ -185,9 +158,8 @@ export function PromoBannerPage() {
           <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="text-left p-2 w-16">Order</th>
-              <th className="text-left p-2 w-28">Preview</th>
+              <th className="text-left p-2 w-16">Icon</th>
               <th className="text-left p-2">Name</th>
-              <th className="text-left p-2 w-40">Category</th>
               <th className="text-left p-2 w-20">Status</th>
               <th className="text-right p-2 w-48">Actions</th>
             </tr>
@@ -195,33 +167,33 @@ export function PromoBannerPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="p-6 text-center text-muted-foreground">
+                <td colSpan={5} className="p-6 text-center text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> Loading…
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-6 text-center text-muted-foreground">
-                  No promo banners yet. Click “New Promo” to add one.
+                <td colSpan={5} className="p-6 text-center text-muted-foreground">
+                  No categories yet. Click “New Category” to add one.
                 </td>
               </tr>
             ) : (
-              rows.map((b, i) => (
-                <tr key={b.id} className="border-t border-panel-border">
+              rows.map((c, i) => (
+                <tr key={c.id} className="border-t border-panel-border">
                   <td className="p-2">
                     <div className="flex items-center gap-1">
-                      <span className="w-6 text-center">{b.sort_order}</span>
+                      <span className="w-6 text-center">{c.sort_order}</span>
                       <div className="flex flex-col">
                         <button
                           disabled={i === 0}
-                          onClick={() => move(b, -1)}
+                          onClick={() => move(c, -1)}
                           className="disabled:opacity-30 hover:text-primary"
                         >
                           <ArrowUp className="w-3 h-3" />
                         </button>
                         <button
                           disabled={i === rows.length - 1}
-                          onClick={() => move(b, 1)}
+                          onClick={() => move(c, 1)}
                           className="disabled:opacity-30 hover:text-primary"
                         >
                           <ArrowDown className="w-3 h-3" />
@@ -230,40 +202,41 @@ export function PromoBannerPage() {
                     </div>
                   </td>
                   <td className="p-2">
-                    <img
-                      src={b.image_url}
-                      alt={b.name}
-                      className="w-24 h-12 object-cover rounded-sm border border-panel-border bg-muted"
-                    />
-                  </td>
-                  <td className="p-2 font-medium">{b.name}</td>
-                  <td className="p-2 text-muted-foreground">
-                    {categories.find((c) => c.id === b.category_id)?.name ?? (
-                      <span className="text-xs italic">Uncategorized</span>
+                    {c.icon_url ? (
+                      <img
+                        src={c.icon_url}
+                        alt={c.name}
+                        className="w-8 h-8 object-cover rounded-sm border border-panel-border bg-muted"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-sm border border-dashed border-panel-border flex items-center justify-center text-muted-foreground">
+                        <ImageIcon className="w-3.5 h-3.5" />
+                      </div>
                     )}
                   </td>
+                  <td className="p-2 font-medium">{c.name}</td>
                   <td className="p-2">
                     <button
-                      onClick={() => toggleActive(b)}
+                      onClick={() => toggleActive(c)}
                       className={`px-2 py-0.5 text-xs rounded-sm border ${
-                        b.active
+                        c.active
                           ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
                           : "bg-muted text-muted-foreground border-panel-border"
                       }`}
                     >
-                      {b.active ? "Active" : "Hidden"}
+                      {c.active ? "Active" : "Hidden"}
                     </button>
                   </td>
                   <td className="p-2 text-right">
                     <div className="inline-flex gap-1">
                       <button
-                        onClick={() => openEdit(b)}
+                        onClick={() => openEdit(c)}
                         className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-sm border border-panel-border hover:bg-muted"
                       >
                         <Pencil className="w-3 h-3" /> Edit
                       </button>
                       <button
-                        onClick={() => remove(b)}
+                        onClick={() => remove(c)}
                         className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-sm border border-panel-border text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="w-3 h-3" /> Delete
@@ -278,89 +251,48 @@ export function PromoBannerPage() {
       </div>
 
       {open && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-panel border border-panel-border rounded-sm w-full max-w-4xl my-8">
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-panel border border-panel-border rounded-sm w-full max-w-lg">
             <div className="flex items-center justify-between p-4 border-b border-panel-border">
               <h3 className="text-sm font-semibold">
-                {form.id ? "Edit Promo Banner" : "New Promo Banner"}
+                {form.id ? "Edit Category" : "New Category"}
               </h3>
               <button onClick={close} className="text-muted-foreground hover:text-foreground">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-4 space-y-4 text-sm max-h-[70vh] overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="md:col-span-2">
-                  <label className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="mt-1 w-full px-2 py-1.5 rounded-sm bg-background border border-panel-border"
-                    placeholder="e.g. Weekend cashback"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Sort order
-                  </label>
-                  <input
-                    type="number"
-                    value={form.sort_order}
-                    onChange={(e) =>
-                      setForm({ ...form, sort_order: Number(e.target.value) || 0 })
-                    }
-                    className="mt-1 w-full px-2 py-1.5 rounded-sm bg-background border border-panel-border"
-                  />
-                </div>
-              </div>
-
+            <div className="p-4 space-y-4 text-sm">
               <div>
                 <label className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Category
+                  Name
                 </label>
-                <select
-                  value={form.category_id ?? ""}
-                  onChange={(e) =>
-                    setForm({ ...form, category_id: e.target.value || null })
-                  }
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="mt-1 w-full px-2 py-1.5 rounded-sm bg-background border border-panel-border"
-                >
-                  <option value="">— Uncategorized —</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                      {!c.active ? " (hidden)" : ""}
-                    </option>
-                  ))}
-                </select>
-                {categories.length === 0 && (
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    No categories yet. Create one in Ads Banner → Ads Category.
-                  </p>
-                )}
+                  placeholder="e.g. Daily Bonus"
+                />
               </div>
 
               <div>
                 <label className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Hero image
+                  Icon (small image shown before the button label)
                 </label>
                 <div className="mt-1 flex items-center gap-3">
-                  {form.image_url ? (
+                  {form.icon_url ? (
                     <img
-                      src={form.image_url}
-                      alt="preview"
-                      className="w-40 h-20 object-cover rounded-sm border border-panel-border bg-muted"
+                      src={form.icon_url}
+                      alt="icon"
+                      className="w-12 h-12 object-cover rounded-sm border border-panel-border bg-muted"
                     />
                   ) : (
-                    <div className="w-40 h-20 rounded-sm border border-dashed border-panel-border flex items-center justify-center text-xs text-muted-foreground">
-                      No image
+                    <div className="w-12 h-12 rounded-sm border border-dashed border-panel-border flex items-center justify-center text-muted-foreground">
+                      <ImageIcon className="w-4 h-4" />
                     </div>
                   )}
                   <input
-                    ref={fileInputRef}
+                    ref={fileRef}
                     type="file"
                     accept="image/*"
                     className="hidden"
@@ -371,7 +303,7 @@ export function PromoBannerPage() {
                     }}
                   />
                   <button
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => fileRef.current?.click()}
                     disabled={uploading}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm border border-panel-border hover:bg-muted disabled:opacity-50"
                   >
@@ -380,34 +312,38 @@ export function PromoBannerPage() {
                     ) : (
                       <Upload className="w-4 h-4" />
                     )}
-                    {form.image_url ? "Replace" : "Upload"}
+                    {form.icon_url ? "Replace" : "Upload"}
                   </button>
+                  {form.icon_url && (
+                    <button
+                      onClick={() => setForm((f) => ({ ...f, icon_url: "" }))}
+                      className="text-xs text-muted-foreground hover:text-destructive"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
               </div>
 
               <div>
                 <label className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Content
+                  Sort order
                 </label>
-                <div className="mt-1">
-                  <RichEditor
-                    value={form.content_html}
-                    onChange={(html) => setForm((f) => ({ ...f, content_html: html }))}
-                  />
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  Tip: use the toolbar to insert tables, images, and change colors. Hover the
-                  color icons to open the palette.
-                </p>
+                <input
+                  type="number"
+                  value={form.sort_order}
+                  onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) || 0 })}
+                  className="mt-1 w-full px-2 py-1.5 rounded-sm bg-background border border-panel-border"
+                />
               </div>
 
-              <label className="flex items-center gap-2 pt-1">
+              <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={form.active}
                   onChange={(e) => setForm({ ...form, active: e.target.checked })}
                 />
-                <span>Active (visible to players)</span>
+                <span>Active (visible in frontend sidebar)</span>
               </label>
             </div>
             <div className="flex justify-end gap-2 p-4 border-t border-panel-border">

@@ -28,7 +28,8 @@ export type PageKey =
   | "offlineRecharge"
   | "quickRecharge"
   | "lobbyBanner"
-  | "promoBanner";
+  | "promoBanner"
+  | "adsCategory";
 
 type NavItem = { key: keyof typeof dict; page?: PageKey };
 type NavGroup = {
@@ -85,6 +86,7 @@ const groups: NavGroup[] = [
     children: [
       { key: "lobbyBanner", page: "lobbyBanner" },
       { key: "promoBanner", page: "promoBanner" },
+      { key: "adsCategory", page: "adsCategory" },
     ],
   },
 ];
