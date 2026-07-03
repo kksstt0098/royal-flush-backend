@@ -12,6 +12,7 @@ type Banner = {
   sort_order: number;
   active: boolean;
   created_at: string;
+  category_id: string | null;
 };
 
 type FormState = {
@@ -21,6 +22,7 @@ type FormState = {
   content_html: string;
   sort_order: number;
   active: boolean;
+  category_id: string | null;
 };
 
 const emptyForm: FormState = {
@@ -29,12 +31,17 @@ const emptyForm: FormState = {
   content_html: "",
   sort_order: 0,
   active: true,
+  category_id: null,
 };
 
 const db = supabase.from("promo_banners" as never) as any;
+const catDb = supabase.from("ads_categories") as any;
+
+type CategoryOption = { id: string; name: string; active: boolean };
 
 export function PromoBannerPage() {
   const [rows, setRows] = useState<Banner[]>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -44,13 +51,20 @@ export function PromoBannerPage() {
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await db
+    const [{ data, error }, catRes] = await Promise.all([
+      db
       .select("*")
       .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true }),
+      catDb
+      .select("id,name,active")
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }),
+    ]);
     setLoading(false);
     if (error) return toast.error(error.message);
     setRows((data ?? []) as Banner[]);
+    if (!catRes.error) setCategories((catRes.data ?? []) as CategoryOption[]);
   };
 
   useEffect(() => {
@@ -70,6 +84,7 @@ export function PromoBannerPage() {
       content_html: b.content_html ?? "",
       sort_order: b.sort_order,
       active: b.active,
+      category_id: b.category_id ?? null,
     });
     setOpen(true);
   };
@@ -112,6 +127,7 @@ export function PromoBannerPage() {
       content_html: form.content_html,
       sort_order: form.sort_order,
       active: form.active,
+      category_id: form.category_id,
     };
     const q = form.id
       ? await db.update(payload).eq("id", form.id)
