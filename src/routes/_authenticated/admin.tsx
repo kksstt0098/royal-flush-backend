@@ -11,6 +11,7 @@ import { OfflineRechargePage } from "@/components/admin/OfflineRechargePage";
 import { QuickRechargePage } from "@/components/admin/QuickRechargePage";
 import { LobbyBannerPage } from "@/components/admin/LobbyBannerPage";
 import { PromoBannerPage } from "@/components/admin/PromoBannerPage";
+import { AdsCategoryPage } from "@/components/admin/AdsCategoryPage";
 import { useSession, useRoles, isStaff } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -114,6 +115,8 @@ function AdminPage() {
           <LobbyBannerPage />
         ) : active === "promoBanner" ? (
           <PromoBannerPage />
+        ) : active === "adsCategory" ? (
+          <AdsCategoryPage />
         ) : (
           <WithdrawalPaymentPage />
         )}
