@@ -116,6 +116,7 @@ export const dict: Dict = {
   adsBanner: { en: "Ads Banner", my: "ကြော်ငြာ ဘန်နာ" },
   lobbyBanner: { en: "Lobby Banner", my: "လော်ဘီ ဘန်နာ" },
   promoBanner: { en: "Promo Banner", my: "ပရိုမို ဘန်နာ" },
+  adsCategory: { en: "Ads Category", my: "ကြော်ငြာ အမျိုးအစား" },
   firstRecharge: { en: "First Recharge", my: "ပထမငွေဖြည့်" },
   sourceUserId: { en: "Source userId", my: "မူလ userId" },
   payoutMode: { en: "Payout Mode", my: "ငွေထုတ်နည်း" },
