@@ -187,6 +187,7 @@ export function PromoBannerPage() {
               <th className="text-left p-2 w-16">Order</th>
               <th className="text-left p-2 w-28">Preview</th>
               <th className="text-left p-2">Name</th>
+              <th className="text-left p-2 w-40">Category</th>
               <th className="text-left p-2 w-20">Status</th>
               <th className="text-right p-2 w-48">Actions</th>
             </tr>
@@ -194,13 +195,13 @@ export function PromoBannerPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="p-6 text-center text-muted-foreground">
+                <td colSpan={6} className="p-6 text-center text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> Loading…
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-6 text-center text-muted-foreground">
+                <td colSpan={6} className="p-6 text-center text-muted-foreground">
                   No promo banners yet. Click “New Promo” to add one.
                 </td>
               </tr>
@@ -236,6 +237,11 @@ export function PromoBannerPage() {
                     />
                   </td>
                   <td className="p-2 font-medium">{b.name}</td>
+                  <td className="p-2 text-muted-foreground">
+                    {categories.find((c) => c.id === b.category_id)?.name ?? (
+                      <span className="text-xs italic">Uncategorized</span>
+                    )}
+                  </td>
                   <td className="p-2">
                     <button
                       onClick={() => toggleActive(b)}
