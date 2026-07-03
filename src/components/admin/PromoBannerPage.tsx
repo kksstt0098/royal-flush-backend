@@ -319,6 +319,32 @@ export function PromoBannerPage() {
 
               <div>
                 <label className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Category
+                </label>
+                <select
+                  value={form.category_id ?? ""}
+                  onChange={(e) =>
+                    setForm({ ...form, category_id: e.target.value || null })
+                  }
+                  className="mt-1 w-full px-2 py-1.5 rounded-sm bg-background border border-panel-border"
+                >
+                  <option value="">— Uncategorized —</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                      {!c.active ? " (hidden)" : ""}
+                    </option>
+                  ))}
+                </select>
+                {categories.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    No categories yet. Create one in Ads Banner → Ads Category.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs uppercase tracking-wide text-muted-foreground">
                   Hero image
                 </label>
                 <div className="mt-1 flex items-center gap-3">
