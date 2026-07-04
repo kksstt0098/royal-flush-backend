@@ -17,6 +17,7 @@ import {
   Banknote,
   CreditCard as RechargeIcon,
   Megaphone,
+  Mail,
 } from "lucide-react";
 
 export type PageKey =
@@ -29,7 +30,9 @@ export type PageKey =
   | "quickRecharge"
   | "lobbyBanner"
   | "promoBanner"
-  | "adsCategory";
+  | "adsCategory"
+  | "mailBox"
+  | "marquee";
 
 type NavItem = { key: keyof typeof dict; page?: PageKey };
 type NavGroup = {
@@ -87,6 +90,15 @@ const groups: NavGroup[] = [
       { key: "lobbyBanner", page: "lobbyBanner" },
       { key: "promoBanner", page: "promoBanner" },
       { key: "adsCategory", page: "adsCategory" },
+    ],
+  },
+  {
+    key: "ingameMail",
+    label: "ingameMail",
+    icon: Mail,
+    children: [
+      { key: "mailBox", page: "mailBox" },
+      { key: "marquee", page: "marquee" },
     ],
   },
 ];
