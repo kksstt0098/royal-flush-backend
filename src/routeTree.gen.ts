@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedPlayerRouteImport } from './routes/_authenticated/player'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as ApiPublicHooksMailWorkerRouteImport } from './routes/api/public/hooks/mail-worker'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -39,18 +40,26 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicHooksMailWorkerRoute =
+  ApiPublicHooksMailWorkerRouteImport.update({
+    id: '/api/public/hooks/mail-worker',
+    path: '/api/public/hooks/mail-worker',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/player': typeof AuthenticatedPlayerRoute
+  '/api/public/hooks/mail-worker': typeof ApiPublicHooksMailWorkerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/player': typeof AuthenticatedPlayerRoute
+  '/api/public/hooks/mail-worker': typeof ApiPublicHooksMailWorkerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,12 +68,18 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/player': typeof AuthenticatedPlayerRoute
+  '/api/public/hooks/mail-worker': typeof ApiPublicHooksMailWorkerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/admin' | '/player'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/admin'
+    | '/player'
+    | '/api/public/hooks/mail-worker'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/admin' | '/player'
+  to: '/' | '/auth' | '/admin' | '/player' | '/api/public/hooks/mail-worker'
   id:
     | '__root__'
     | '/'
@@ -72,12 +87,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/admin'
     | '/_authenticated/player'
+    | '/api/public/hooks/mail-worker'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicHooksMailWorkerRoute: typeof ApiPublicHooksMailWorkerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -117,6 +134,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/mail-worker': {
+      id: '/api/public/hooks/mail-worker'
+      path: '/api/public/hooks/mail-worker'
+      fullPath: '/api/public/hooks/mail-worker'
+      preLoaderRoute: typeof ApiPublicHooksMailWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -137,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicHooksMailWorkerRoute: ApiPublicHooksMailWorkerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
