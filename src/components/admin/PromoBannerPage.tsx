@@ -3,6 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Loader2, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { RichEditor } from "./RichEditor";
+import { PromotionEditor } from "./PromotionEditor";
+import {
+  emptyPromotionDraft,
+  type LinkAction,
+  type Promotion,
+  type PromotionDraft,
+} from "./promotion-types";
 
 type Banner = {
   id: string;
@@ -13,7 +20,12 @@ type Banner = {
   active: boolean;
   created_at: string;
   category_id: string | null;
+  promotion_id: string | null;
+  link_action: LinkAction | null;
+  redirect_url: string | null;
 };
+
+type PromoMode = "none" | "existing" | "new";
 
 type FormState = {
   id?: string;
@@ -23,6 +35,11 @@ type FormState = {
   sort_order: number;
   active: boolean;
   category_id: string | null;
+  promo_mode: PromoMode;
+  promotion_id: string | null;
+  link_action: LinkAction;
+  redirect_url: string;
+  new_promotion: PromotionDraft;
 };
 
 const emptyForm: FormState = {
@@ -32,16 +49,23 @@ const emptyForm: FormState = {
   sort_order: 0,
   active: true,
   category_id: null,
+  promo_mode: "none",
+  promotion_id: null,
+  link_action: "open_promotion_page",
+  redirect_url: "",
+  new_promotion: emptyPromotionDraft,
 };
 
 const db = supabase.from("promo_banners" as never) as any;
 const catDb = supabase.from("ads_categories") as any;
+const promoDb = supabase.from("promotions" as never) as any;
 
 type CategoryOption = { id: string; name: string; active: boolean };
 
 export function PromoBannerPage() {
   const [rows, setRows] = useState<Banner[]>([]);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -51,7 +75,7 @@ export function PromoBannerPage() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data, error }, catRes] = await Promise.all([
+    const [{ data, error }, catRes, promoRes] = await Promise.all([
       db
       .select("*")
       .order("sort_order", { ascending: true })
@@ -60,11 +84,15 @@ export function PromoBannerPage() {
       .select("id,name,active")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true }),
+      promoDb
+        .select("*")
+        .order("created_at", { ascending: false }),
     ]);
     setLoading(false);
     if (error) return toast.error(error.message);
     setRows((data ?? []) as Banner[]);
     if (!catRes.error) setCategories((catRes.data ?? []) as CategoryOption[]);
+    if (!promoRes.error) setPromotions((promoRes.data ?? []) as Promotion[]);
   };
 
   useEffect(() => {
@@ -85,6 +113,11 @@ export function PromoBannerPage() {
       sort_order: b.sort_order,
       active: b.active,
       category_id: b.category_id ?? null,
+      promo_mode: b.promotion_id ? "existing" : "none",
+      promotion_id: b.promotion_id,
+      link_action: (b.link_action ?? "open_promotion_page") as LinkAction,
+      redirect_url: b.redirect_url ?? "",
+      new_promotion: emptyPromotionDraft,
     });
     setOpen(true);
   };
@@ -120,7 +153,40 @@ export function PromoBannerPage() {
   const save = async () => {
     if (!form.name.trim()) return toast.error("Name is required");
     if (!form.image_url) return toast.error("Hero image is required");
+
+    let promotion_id: string | null = null;
+    let link_action: LinkAction | null = null;
+    let redirect_url: string | null = null;
+
+    if (form.promo_mode === "existing") {
+      if (!form.promotion_id) return toast.error("Choose an existing promotion");
+      promotion_id = form.promotion_id;
+      link_action = form.link_action;
+      redirect_url = form.link_action === "redirect_url" ? form.redirect_url || null : null;
+    } else if (form.promo_mode === "new") {
+      if (!form.new_promotion.name.trim())
+        return toast.error("Promotion name is required");
+      link_action = form.new_promotion.link_action;
+      redirect_url =
+        form.new_promotion.link_action === "redirect_url"
+          ? form.new_promotion.redirect_url ?? null
+          : null;
+    }
+
     setSaving(true);
+
+    if (form.promo_mode === "new") {
+      const ins = await promoDb
+        .insert({ ...form.new_promotion, name: form.new_promotion.name.trim() })
+        .select("id")
+        .single();
+      if (ins.error) {
+        setSaving(false);
+        return toast.error(ins.error.message);
+      }
+      promotion_id = ins.data.id as string;
+    }
+
     const payload = {
       name: form.name.trim(),
       image_url: form.image_url,
@@ -128,6 +194,9 @@ export function PromoBannerPage() {
       sort_order: form.sort_order,
       active: form.active,
       category_id: form.category_id,
+      promotion_id,
+      link_action,
+      redirect_url,
     };
     const q = form.id
       ? await db.update(payload).eq("id", form.id)
@@ -409,6 +478,111 @@ export function PromoBannerPage() {
                 />
                 <span>Active (visible to players)</span>
               </label>
+
+              {/* Promotion step */}
+              <div className="pt-2 border-t border-panel-border">
+                <div className="mb-2">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Promotion
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Attach this banner to a promotion or create one in the same step.
+                  </p>
+                </div>
+                <div className="flex gap-2 mb-3">
+                  {(["none", "existing", "new"] as PromoMode[]).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setForm({ ...form, promo_mode: m })}
+                      className={
+                        "px-3 py-1.5 text-xs rounded-sm border " +
+                        (form.promo_mode === m
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-panel-border hover:bg-muted")
+                      }
+                    >
+                      {m === "none"
+                        ? "No promotion (marketing only)"
+                        : m === "existing"
+                          ? "Attach existing"
+                          : "Create new"}
+                    </button>
+                  ))}
+                </div>
+
+                {form.promo_mode === "existing" && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        Promotion
+                      </label>
+                      <select
+                        value={form.promotion_id ?? ""}
+                        onChange={(e) =>
+                          setForm({ ...form, promotion_id: e.target.value || null })
+                        }
+                        className="mt-1 w-full px-2 py-1.5 rounded-sm bg-background border border-panel-border"
+                      >
+                        <option value="">— Select promotion —</option>
+                        {promotions.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} ({p.promo_type}, {p.status})
+                          </option>
+                        ))}
+                      </select>
+                      {promotions.length === 0 && (
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          No promotions yet — create one in Ads Banner → Promotions, or use
+                          “Create new”.
+                        </p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                          On banner click
+                        </label>
+                        <select
+                          value={form.link_action}
+                          onChange={(e) =>
+                            setForm({ ...form, link_action: e.target.value as LinkAction })
+                          }
+                          className="mt-1 w-full px-2 py-1.5 rounded-sm bg-background border border-panel-border"
+                        >
+                          <option value="open_promotion_page">Open promotion page</option>
+                          <option value="apply_bonus_direct">Apply bonus directly</option>
+                          <option value="redirect_url">Redirect to URL</option>
+                        </select>
+                      </div>
+                      {form.link_action === "redirect_url" && (
+                        <div>
+                          <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                            Redirect URL
+                          </label>
+                          <input
+                            value={form.redirect_url}
+                            onChange={(e) =>
+                              setForm({ ...form, redirect_url: e.target.value })
+                            }
+                            className="mt-1 w-full px-2 py-1.5 rounded-sm bg-background border border-panel-border"
+                            placeholder="https://…"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {form.promo_mode === "new" && (
+                  <div className="rounded-sm border border-panel-border p-3">
+                    <PromotionEditor
+                      value={form.new_promotion}
+                      onChange={(v) => setForm({ ...form, new_promotion: v })}
+                      compact
+                    />
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex justify-end gap-2 p-4 border-t border-panel-border">
               <button
