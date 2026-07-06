@@ -117,6 +117,7 @@ export const dict: Dict = {
   lobbyBanner: { en: "Lobby Banner", my: "လော်ဘီ ဘန်နာ" },
   promoBanner: { en: "Promo Banner", my: "ပရိုမို ဘန်နာ" },
   adsCategory: { en: "Ads Category", my: "ကြော်ငြာ အမျိုးအစား" },
+  promotions: { en: "Promotions", my: "ပရိုမိုးရှင်း" },
   ingameMail: { en: "Ingame Mail", my: "ဂိမ်းတွင်း စာတိုက်" },
   mailBox: { en: "Mail Box", my: "စာတိုက်ပုံး" },
   marquee: { en: "Marquee", my: "ကြေငြာစာတန်း" },
