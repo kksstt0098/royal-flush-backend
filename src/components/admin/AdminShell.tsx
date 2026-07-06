@@ -31,6 +31,7 @@ export type PageKey =
   | "lobbyBanner"
   | "promoBanner"
   | "adsCategory"
+  | "promotions"
   | "mailBox"
   | "marquee";
 
@@ -90,6 +91,7 @@ const groups: NavGroup[] = [
       { key: "lobbyBanner", page: "lobbyBanner" },
       { key: "promoBanner", page: "promoBanner" },
       { key: "adsCategory", page: "adsCategory" },
+      { key: "promotions", page: "promotions" },
     ],
   },
   {
