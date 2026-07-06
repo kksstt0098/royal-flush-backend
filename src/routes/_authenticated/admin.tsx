@@ -12,6 +12,7 @@ import { QuickRechargePage } from "@/components/admin/QuickRechargePage";
 import { LobbyBannerPage } from "@/components/admin/LobbyBannerPage";
 import { PromoBannerPage } from "@/components/admin/PromoBannerPage";
 import { AdsCategoryPage } from "@/components/admin/AdsCategoryPage";
+import { PromotionsPage } from "@/components/admin/PromotionsPage";
 import { MailBoxPage } from "@/components/admin/MailBoxPage";
 import { MarqueePage } from "@/components/admin/MarqueePage";
 import { useSession, useRoles, isStaff } from "@/hooks/use-auth";
@@ -119,6 +120,8 @@ function AdminPage() {
           <PromoBannerPage />
         ) : active === "adsCategory" ? (
           <AdsCategoryPage />
+        ) : active === "promotions" ? (
+          <PromotionsPage />
         ) : active === "mailBox" ? (
           <MailBoxPage />
         ) : active === "marquee" ? (
