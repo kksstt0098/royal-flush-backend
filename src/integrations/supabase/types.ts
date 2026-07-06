@@ -83,6 +83,74 @@ export type Database = {
         }
         Relationships: []
       }
+      banner_clicks: {
+        Row: {
+          banner_id: string
+          id: string
+          occurred_at: string
+          promotion_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          banner_id: string
+          id?: string
+          occurred_at?: string
+          promotion_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          banner_id?: string
+          id?: string
+          occurred_at?: string
+          promotion_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banner_clicks_banner_id_fkey"
+            columns: ["banner_id"]
+            isOneToOne: false
+            referencedRelation: "promo_banners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "banner_clicks_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      banner_impressions: {
+        Row: {
+          banner_id: string
+          id: string
+          occurred_at: string
+          user_id: string | null
+        }
+        Insert: {
+          banner_id: string
+          id?: string
+          occurred_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          banner_id?: string
+          id?: string
+          occurred_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banner_impressions_banner_id_fkey"
+            columns: ["banner_id"]
+            isOneToOne: false
+            referencedRelation: "promo_banners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bets: {
         Row: {
           created_at: string
@@ -689,7 +757,10 @@ export type Database = {
           created_by: string | null
           id: string
           image_url: string
+          link_action: string | null
           name: string
+          promotion_id: string | null
+          redirect_url: string | null
           sort_order: number
           updated_at: string
         }
@@ -701,7 +772,10 @@ export type Database = {
           created_by?: string | null
           id?: string
           image_url: string
+          link_action?: string | null
           name: string
+          promotion_id?: string | null
+          redirect_url?: string | null
           sort_order?: number
           updated_at?: string
         }
@@ -713,7 +787,10 @@ export type Database = {
           created_by?: string | null
           id?: string
           image_url?: string
+          link_action?: string | null
           name?: string
+          promotion_id?: string | null
+          redirect_url?: string | null
           sort_order?: number
           updated_at?: string
         }
@@ -725,7 +802,100 @@ export type Database = {
             referencedRelation: "ads_categories"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "promo_banners_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      promotion_conversions: {
+        Row: {
+          deposit_amount: number
+          id: string
+          occurred_at: string
+          promotion_id: string
+          user_id: string
+        }
+        Insert: {
+          deposit_amount?: number
+          id?: string
+          occurred_at?: string
+          promotion_id: string
+          user_id: string
+        }
+        Update: {
+          deposit_amount?: number
+          id?: string
+          occurred_at?: string
+          promotion_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_conversions_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promotions: {
+        Row: {
+          bonus_config: Json
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          game_contribution: Json
+          id: string
+          link_action: string
+          name: string
+          promo_type: string
+          redirect_url: string | null
+          start_date: string | null
+          status: string
+          targeting: Json
+          updated_at: string
+          wagering_config: Json
+        }
+        Insert: {
+          bonus_config?: Json
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          game_contribution?: Json
+          id?: string
+          link_action?: string
+          name: string
+          promo_type: string
+          redirect_url?: string | null
+          start_date?: string | null
+          status?: string
+          targeting?: Json
+          updated_at?: string
+          wagering_config?: Json
+        }
+        Update: {
+          bonus_config?: Json
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          game_contribution?: Json
+          id?: string
+          link_action?: string
+          name?: string
+          promo_type?: string
+          redirect_url?: string | null
+          start_date?: string | null
+          status?: string
+          targeting?: Json
+          updated_at?: string
+          wagering_config?: Json
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
