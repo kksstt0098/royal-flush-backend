@@ -676,6 +676,116 @@ export type Database = {
         }
         Relationships: []
       }
+      marquee_click_logs: {
+        Row: {
+          created_at: string
+          id: string
+          ip: string | null
+          message_id: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip?: string | null
+          message_id: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip?: string | null
+          message_id?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marquee_click_logs_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "marquee_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marquee_messages: {
+        Row: {
+          background_color: string
+          click_count: number
+          content: string
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          display_count: number
+          end_at: string | null
+          font_weight: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          is_pinned: boolean
+          link_url: string | null
+          position: Database["public"]["Enums"]["marquee_position"]
+          priority: number
+          scroll_speed: number
+          start_at: string
+          target_audience: Database["public"]["Enums"]["marquee_audience"]
+          text_color: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          background_color?: string
+          click_count?: number
+          content: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          display_count?: number
+          end_at?: string | null
+          font_weight?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_pinned?: boolean
+          link_url?: string | null
+          position?: Database["public"]["Enums"]["marquee_position"]
+          priority?: number
+          scroll_speed?: number
+          start_at?: string
+          target_audience?: Database["public"]["Enums"]["marquee_audience"]
+          text_color?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          background_color?: string
+          click_count?: number
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          display_count?: number
+          end_at?: string | null
+          font_weight?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_pinned?: boolean
+          link_url?: string | null
+          position?: Database["public"]["Enums"]["marquee_position"]
+          priority?: number
+          scroll_speed?: number
+          start_at?: string
+          target_audience?: Database["public"]["Enums"]["marquee_audience"]
+          text_color?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           addr: string | null
@@ -1194,6 +1304,10 @@ export type Database = {
         Args: { _channel: string; _id: string; _out_trade_no: string }
         Returns: undefined
       }
+      marquee_increment: {
+        Args: { _field: string; _id: string }
+        Returns: undefined
+      }
       mock_deposit: { Args: { _amount: number }; Returns: string }
       reject_withdrawal: {
         Args: { _id: string; _remark: string }
@@ -1239,6 +1353,8 @@ export type Database = {
         | "withdrawal_approved"
         | "withdrawal_rejected"
       mail_recipient_type: "all_users" | "single_user" | "bulk_users" | "event"
+      marquee_audience: "all" | "players" | "vip" | "new_users" | "staff"
+      marquee_position: "top" | "bottom" | "both"
       player_status: "active" | "disabled"
       withdrawal_status:
         | "Pending"
@@ -1400,6 +1516,8 @@ export const Constants = {
         "withdrawal_rejected",
       ],
       mail_recipient_type: ["all_users", "single_user", "bulk_users", "event"],
+      marquee_audience: ["all", "players", "vip", "new_users", "staff"],
+      marquee_position: ["top", "bottom", "both"],
       player_status: ["active", "disabled"],
       withdrawal_status: [
         "Pending",
