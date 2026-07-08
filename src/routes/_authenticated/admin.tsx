@@ -15,6 +15,7 @@ import { AdsCategoryPage } from "@/components/admin/AdsCategoryPage";
 import { PromotionsPage } from "@/components/admin/PromotionsPage";
 import { MailBoxPage } from "@/components/admin/MailBoxPage";
 import { MarqueePage } from "@/components/admin/MarqueePage";
+import { CSConfigurePage } from "@/components/admin/CSConfigurePage";
 import { useSession, useRoles, isStaff } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -126,6 +127,8 @@ function AdminPage() {
           <MailBoxPage />
         ) : active === "marquee" ? (
           <MarqueePage />
+        ) : active === "csConfigure" ? (
+          <CSConfigurePage />
         ) : (
           <WithdrawalPaymentPage />
         )}
