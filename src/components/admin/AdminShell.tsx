@@ -33,7 +33,8 @@ export type PageKey =
   | "adsCategory"
   | "promotions"
   | "mailBox"
-  | "marquee";
+  | "marquee"
+  | "csConfigure";
 
 type NavItem = { key: keyof typeof dict; page?: PageKey };
 type NavGroup = {
@@ -101,6 +102,7 @@ const groups: NavGroup[] = [
     children: [
       { key: "mailBox", page: "mailBox" },
       { key: "marquee", page: "marquee" },
+      { key: "csConfigure", page: "csConfigure" },
     ],
   },
 ];

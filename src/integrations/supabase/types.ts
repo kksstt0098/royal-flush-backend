@@ -178,6 +178,66 @@ export type Database = {
         }
         Relationships: []
       }
+      cs_configs: {
+        Row: {
+          audience: Database["public"]["Enums"]["cs_audience"]
+          bg_color: string | null
+          channel: Database["public"]["Enums"]["cs_channel_type"]
+          color: string | null
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          display_order: number
+          enabled: boolean
+          icon: string | null
+          id: string
+          label: string
+          open_in_new_tab: boolean
+          position: string
+          remark: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          audience?: Database["public"]["Enums"]["cs_audience"]
+          bg_color?: string | null
+          channel: Database["public"]["Enums"]["cs_channel_type"]
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          display_order?: number
+          enabled?: boolean
+          icon?: string | null
+          id?: string
+          label: string
+          open_in_new_tab?: boolean
+          position?: string
+          remark?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          audience?: Database["public"]["Enums"]["cs_audience"]
+          bg_color?: string | null
+          channel?: Database["public"]["Enums"]["cs_channel_type"]
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          display_order?: number
+          enabled?: boolean
+          icon?: string | null
+          id?: string
+          label?: string
+          open_in_new_tab?: boolean
+          position?: string
+          remark?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       deposits: {
         Row: {
           account_no: string | null
@@ -1332,6 +1392,18 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "auditor" | "payer" | "player"
+      cs_audience: "all" | "players" | "staff"
+      cs_channel_type:
+        | "telegram"
+        | "whatsapp"
+        | "livechat"
+        | "viber"
+        | "messenger"
+        | "line"
+        | "wechat"
+        | "email"
+        | "phone"
+        | "url"
       lock_flag: "locked" | "unlocked"
       mail_campaign_status:
         | "draft"
@@ -1492,6 +1564,19 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "auditor", "payer", "player"],
+      cs_audience: ["all", "players", "staff"],
+      cs_channel_type: [
+        "telegram",
+        "whatsapp",
+        "livechat",
+        "viber",
+        "messenger",
+        "line",
+        "wechat",
+        "email",
+        "phone",
+        "url",
+      ],
       lock_flag: ["locked", "unlocked"],
       mail_campaign_status: [
         "draft",

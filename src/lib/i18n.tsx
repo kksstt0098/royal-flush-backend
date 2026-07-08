@@ -121,6 +121,7 @@ export const dict: Dict = {
   ingameMail: { en: "Ingame Mail", my: "ဂိမ်းတွင်း စာတိုက်" },
   mailBox: { en: "Mail Box", my: "စာတိုက်ပုံး" },
   marquee: { en: "Marquee", my: "ကြေငြာစာတန်း" },
+  csConfigure: { en: "CS Configure", my: "CS ဖော်ပြပုံ" },
   firstRecharge: { en: "First Recharge", my: "ပထမငွေဖြည့်" },
   sourceUserId: { en: "Source userId", my: "မူလ userId" },
   payoutMode: { en: "Payout Mode", my: "ငွေထုတ်နည်း" },
