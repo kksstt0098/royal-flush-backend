@@ -27,7 +27,15 @@ function AuthPage() {
     (async () => {
       const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (data?.currentLevel === "aal2") navigate({ to: "/admin" });
+      else if (data?.currentLevel === "aal1") {
+        try {
+          await startTotpForSession();
+        } catch {
+          /* user will just see the password stage */
+        }
+      }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   const resetToPassword = async () => {
