@@ -75,12 +75,6 @@ function AdminPage() {
               Claim first admin (only if none exists yet)
             </button>
             <button
-              onClick={() => navigate({ to: "/player" })}
-              className="h-9 rounded-sm border border-input bg-background text-sm hover:bg-accent"
-            >
-              Go to player app
-            </button>
-            <button
               onClick={async () => {
                 await supabase.auth.signOut();
                 navigate({ to: "/auth" });
