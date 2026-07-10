@@ -427,6 +427,110 @@ export function AdminShell({
 
       <main className="p-3">{children}</main>
       </div>
+      {exportOpen && (
+        <ExportDialog email={email} onClose={() => setExportOpen(false)} />
+      )}
+    </div>
+  );
+}
+
+function ExportDialog({ email, onClose }: { email: string; onClose: () => void }) {
+  const [password, setPassword] = useState("");
+  const [scope, setScope] = useState<"withdrawals" | "deposits" | "both">("both");
+  const [step, setStep] = useState<"approve" | "ready">("approve");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const approve = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!password) { setError("Password required"); return; }
+    setBusy(true);
+    const ok = await reauthenticate(email, password);
+    setBusy(false);
+    if (ok) {
+      setStep("ready");
+      toast.success("Export approved");
+    } else {
+      setError("Incorrect password");
+    }
+  };
+
+  const doDownload = async () => {
+    setBusy(true);
+    const bundle = await fetchExportBundle();
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    if (scope === "withdrawals" || scope === "both") {
+      downloadFile(`withdrawals_${stamp}.csv`, rowsToCsv(bundle.withdrawals));
+    }
+    if (scope === "deposits" || scope === "both") {
+      downloadFile(`deposits_${stamp}.csv`, rowsToCsv(bundle.deposits));
+    }
+    setBusy(false);
+    toast.success("Export downloaded");
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-panel border border-panel-border rounded-md w-full max-w-md p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            <Download className="w-4 h-4" /> Export data
+          </h2>
+          <button onClick={onClose}><X className="w-4 h-4" /></button>
+        </div>
+
+        <div>
+          <label className="text-xs text-muted-foreground">What to export</label>
+          <select
+            value={scope}
+            onChange={(e) => setScope(e.target.value as typeof scope)}
+            className="mt-1 w-full h-9 px-2 rounded-sm border border-input bg-background text-sm"
+          >
+            <option value="both">Withdrawals + Deposits</option>
+            <option value="withdrawals">Withdrawals only</option>
+            <option value="deposits">Deposits only</option>
+          </select>
+        </div>
+
+        {step === "approve" ? (
+          <form onSubmit={approve} className="space-y-3">
+            <div className="text-xs text-muted-foreground flex items-start gap-2 bg-warning/10 border border-warning/30 rounded-sm p-2">
+              <ShieldCheck className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+              <span>Download requires admin approval. Re-enter your password to authorize this export.</span>
+            </div>
+            <label className="block text-xs">Password
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoFocus
+                className="mt-1 w-full h-9 px-2 rounded-sm border border-input bg-background text-sm"
+              />
+            </label>
+            {error && <p className="text-xs text-destructive">{error}</p>}
+            <div className="flex justify-end gap-2 pt-1">
+              <button type="button" onClick={onClose} className="h-9 px-3 rounded-sm border border-input text-sm hover:bg-accent">Cancel</button>
+              <button disabled={busy} type="submit" className="h-9 px-4 rounded-sm bg-primary text-primary-foreground text-sm disabled:opacity-50 flex items-center gap-2">
+                {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />} Approve
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-3">
+            <div className="text-xs text-success flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4" /> Approved — ready to download.
+            </div>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={onClose} className="h-9 px-3 rounded-sm border border-input text-sm hover:bg-accent">Cancel</button>
+              <button disabled={busy} onClick={doDownload} className="h-9 px-4 rounded-sm bg-primary text-primary-foreground text-sm disabled:opacity-50 flex items-center gap-2">
+                {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Download
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
