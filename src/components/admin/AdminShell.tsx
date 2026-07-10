@@ -141,6 +141,57 @@ export function AdminShell({
   const { t, lang, setLang } = useT();
   const [open, setOpen] = useState<Record<string, boolean>>({ player: true, cash: true });
   const toggle = (k: string) => setOpen((o) => ({ ...o, [k]: !o[k] }));
+  const navigate = useNavigate();
+  const { user } = useSession();
+  const [nick, setNick] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  useEffect(() => {
+    if (!user) return;
+    setEmail(user.email ?? "");
+    supabase.from("profiles").select("nick").eq("id", user.id).maybeSingle().then(({ data }) => {
+      if (data?.nick) setNick(data.nick);
+    });
+  }, [user?.id]);
+
+  const clock = useMyanmarClock();
+  const counts = usePendingCounts(
+    (order) => {
+      toast.warning(`New withdrawal request`, {
+        description: order,
+        action: { label: "Review", onClick: () => onNavigate("reviewWithdrawal") },
+      });
+    },
+    (order) => {
+      toast.info(`New deposit`, {
+        description: order,
+        action: { label: "Review", onClick: () => onNavigate("onlineRecharge") },
+      });
+    },
+  );
+  const onlineCount = useOnlineStaff(user?.id, nick || email);
+  const recent = useRecentPending();
+
+  const [bellOpen, setBellOpen] = useState(false);
+  const [userOpen, setUserOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const bellRef = useRef<HTMLDivElement | null>(null);
+  const userRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) setBellOpen(false);
+      if (userRef.current && !userRef.current.contains(e.target as Node)) setUserOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  };
+
+  const displayName = nick || (email ? email.split("@")[0] : "Admin");
+  const totalPending = counts.withdrawals + counts.deposits;
 
   const activeGroup = groups.find((g) =>
     g.children?.some((c) => c.page === activePage),
