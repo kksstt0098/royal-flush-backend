@@ -273,33 +273,126 @@ export function AdminShell({
           </nav>
         </div>
         <div className="flex items-center gap-4 text-[13px] text-foreground/80">
-          <span className="text-muted-foreground">Myanmar: 2025-12-28 09:20:06</span>
+          <span className="text-muted-foreground tabular-nums">Myanmar: {clock}</span>
           <button
             onClick={() => setLang((lang === "en" ? "my" : "en") as Lang)}
             className="flex items-center gap-1 hover:text-info"
+            title="Toggle language"
           >
             <Globe className="w-4 h-4" />
             <span>{lang === "en" ? "English" : "မြန်မာ"}</span>
           </button>
-          <Bell className="w-4 h-4" />
-          <span className="flex items-center gap-1">
+
+          {/* Bell — notifications */}
+          <div className="relative" ref={bellRef}>
+            <button
+              onClick={() => setBellOpen((v) => !v)}
+              className="relative flex items-center hover:text-info"
+              title="Notifications"
+            >
+              <Bell className="w-4 h-4" />
+              {totalPending > 0 && (
+                <span className="absolute -top-1.5 -right-2 bg-danger text-danger-foreground text-[10px] rounded-full px-1 min-w-[16px] text-center leading-4">
+                  {totalPending > 99 ? "99+" : totalPending}
+                </span>
+              )}
+            </button>
+            {bellOpen && (
+              <div className="absolute right-0 top-8 w-80 max-h-96 overflow-auto bg-panel border border-panel-border rounded-md shadow-lg z-50">
+                <div className="px-3 py-2 border-b border-panel-border text-xs font-semibold flex items-center justify-between">
+                  <span>Pending orders ({totalPending})</span>
+                  <button onClick={() => setBellOpen(false)} className="text-muted-foreground hover:text-foreground">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                {recent.length === 0 ? (
+                  <div className="p-4 text-xs text-muted-foreground text-center">No pending orders</div>
+                ) : (
+                  recent.map((r) => (
+                    <button
+                      key={r.kind + r.orderNo}
+                      onClick={() => {
+                        onNavigate(r.kind === "withdrawal" ? "reviewWithdrawal" : "onlineRecharge");
+                        setBellOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-accent border-b border-panel-border/50 flex justify-between items-start gap-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{r.kind}</div>
+                        <div className="text-xs font-mono truncate">{r.orderNo}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-xs font-semibold">{r.amount.toLocaleString()}</div>
+                        <div className="text-[10px] text-muted-foreground">{new Date(r.createdAt).toLocaleTimeString()}</div>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* File — export */}
+          <button
+            onClick={() => setExportOpen(true)}
+            className="flex items-center gap-1 hover:text-info"
+            title="Export data (approval required)"
+          >
             <FileText className="w-4 h-4" /> {t("file")}
-          </span>
-          <span>online 38</span>
-          <span className="flex items-center gap-1">
+          </button>
+
+          <span title="Online staff (live)">online {onlineCount}</span>
+
+          <button
+            onClick={() => onNavigate("onlineRecharge")}
+            className="flex items-center gap-1 hover:text-info relative"
+            title="Pending deposits"
+          >
             <CreditCard className="w-4 h-4" /> {t("pay")}
-          </span>
-          <span className="flex items-center gap-1 relative">
+            {counts.deposits > 0 && (
+              <span className="absolute -top-1.5 -right-3 bg-warning text-warning-foreground text-[10px] rounded-full px-1 min-w-[16px] text-center leading-4">
+                {counts.deposits}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => onNavigate("reviewWithdrawal")}
+            className="flex items-center gap-1 hover:text-info relative"
+            title="Pending withdrawals"
+          >
             <Wallet className="w-4 h-4" /> {t("withdraw")}
-            <span className="absolute -top-1.5 -right-3 bg-danger text-danger-foreground text-[10px] rounded-full px-1 min-w-[16px] text-center leading-4">
-              19
-            </span>
-          </span>
-          <span className="flex items-center gap-1 pl-3">
-            <User className="w-4 h-4 p-0.5 rounded-full bg-muted" />
-            Vyy
-            <ChevronDown className="w-3 h-3" />
-          </span>
+            {counts.withdrawals > 0 && (
+              <span className="absolute -top-1.5 -right-3 bg-danger text-danger-foreground text-[10px] rounded-full px-1 min-w-[16px] text-center leading-4">
+                {counts.withdrawals}
+              </span>
+            )}
+          </button>
+
+          {/* User dropdown */}
+          <div className="relative" ref={userRef}>
+            <button
+              onClick={() => setUserOpen((v) => !v)}
+              className="flex items-center gap-1 pl-3 hover:text-info"
+            >
+              <User className="w-4 h-4 p-0.5 rounded-full bg-muted" />
+              {displayName}
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            {userOpen && (
+              <div className="absolute right-0 top-8 w-56 bg-panel border border-panel-border rounded-md shadow-lg z-50">
+                <div className="px-3 py-2 border-b border-panel-border">
+                  <div className="text-xs font-semibold">{displayName}</div>
+                  <div className="text-[11px] text-muted-foreground truncate">{email}</div>
+                </div>
+                <button
+                  onClick={signOut}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-accent text-danger"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> Sign out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
