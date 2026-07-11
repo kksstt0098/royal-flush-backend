@@ -161,6 +161,8 @@ export const dict: Dict = {
   locked: { en: "Locked", my: "လော့ခ်ချထား" },
   unlocked: { en: "Unlocked", my: "ဖွင့်ထား" },
   withdrawalOrderDetails: { en: "Withdrawal Order Details", my: "ငွေထုတ်အော်ဒါအသေးစိတ်" },
+  vipConfig: { en: "VIP Config", my: "VIP ဖော်ပြပုံ" },
+  vipManagement: { en: "VIP Management", my: "VIP စီမံခန့်ခွဲမှု" },
 };
 
 type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (k: keyof typeof dict) => string };
