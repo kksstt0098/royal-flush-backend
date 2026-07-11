@@ -52,7 +52,8 @@ export type PageKey =
   | "promotions"
   | "mailBox"
   | "marquee"
-  | "csConfigure";
+  | "csConfigure"
+  | "vipConfig";
 
 type NavItem = { key: keyof typeof dict; page?: PageKey };
 type NavGroup = {
@@ -121,6 +122,14 @@ const groups: NavGroup[] = [
       { key: "mailBox", page: "mailBox" },
       { key: "marquee", page: "marquee" },
       { key: "csConfigure", page: "csConfigure" },
+    ],
+  },
+  {
+    key: "vip",
+    label: "vipManagement",
+    icon: ShieldCheck,
+    children: [
+      { key: "vipConfig", page: "vipConfig" },
     ],
   },
 ];

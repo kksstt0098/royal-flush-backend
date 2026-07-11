@@ -16,6 +16,7 @@ import { PromotionsPage } from "@/components/admin/PromotionsPage";
 import { MailBoxPage } from "@/components/admin/MailBoxPage";
 import { MarqueePage } from "@/components/admin/MarqueePage";
 import { CSConfigurePage } from "@/components/admin/CSConfigurePage";
+import { VipConfigPage } from "@/components/admin/VipConfigPage";
 import { useSession, useRoles, isStaff } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -123,6 +124,8 @@ function AdminPage() {
           <MarqueePage />
         ) : active === "csConfigure" ? (
           <CSConfigurePage />
+        ) : active === "vipConfig" ? (
+          <VipConfigPage />
         ) : (
           <WithdrawalPaymentPage />
         )}
