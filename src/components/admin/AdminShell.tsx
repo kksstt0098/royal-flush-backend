@@ -61,6 +61,7 @@ type NavGroup = {
   label: keyof typeof dict;
   icon: React.ComponentType<{ className?: string }>;
   children?: NavItem[];
+  page?: PageKey;
 };
 
 const groups: NavGroup[] = [
@@ -126,11 +127,9 @@ const groups: NavGroup[] = [
   },
   {
     key: "vip",
-    label: "vipManagement",
+    label: "vipConfig",
     icon: ShieldCheck,
-    children: [
-      { key: "vipConfig", page: "vipConfig" },
-    ],
+    page: "vipConfig",
   },
 ];
 
@@ -202,11 +201,11 @@ export function AdminShell({
   const displayName = nick || (email ? email.split("@")[0] : "Admin");
   const totalPending = counts.withdrawals + counts.deposits;
 
-  const activeGroup = groups.find((g) =>
-    g.children?.some((c) => c.page === activePage),
+  const activeGroup = groups.find(
+    (g) => g.page === activePage || g.children?.some((c) => c.page === activePage),
   );
   const activeChild = activeGroup?.children?.find((c) => c.page === activePage);
-  const crumb = activeChild ? t(activeChild.key) : "";
+  const crumb = activeChild ? t(activeChild.key) : activeGroup?.page === activePage ? t(activeGroup.label) : "";
   const groupLabel = activeGroup ? t(activeGroup.label) : "";
 
   return (
@@ -221,11 +220,20 @@ export function AdminShell({
             const Icon = g.icon;
             const hasChildren = !!g.children;
             const isOpen = open[g.key];
+            const isLeafActive = g.page && g.page === activePage;
             return (
               <div key={g.key}>
                 <button
-                  onClick={() => hasChildren && toggle(g.key)}
-                  className="w-full flex items-center gap-2 px-4 h-9 hover:bg-white/5 text-white/80"
+                  onClick={() => {
+                    if (hasChildren) toggle(g.key);
+                    else if (g.page) onNavigate(g.page);
+                  }}
+                  className={
+                    "w-full flex items-center gap-2 px-4 h-9 hover:bg-white/5 " +
+                    (isLeafActive
+                      ? "bg-[oklch(0.6_0.18_250)]/15 text-[oklch(0.75_0.18_250)]"
+                      : "text-white/80")
+                  }
                 >
                   <Icon className="w-4 h-4" />
                   <span className="flex-1 text-left">{t(g.label)}</span>
