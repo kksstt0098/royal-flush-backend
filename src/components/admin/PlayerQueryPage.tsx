@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useT } from "@/lib/i18n";
-import { mockPlayers, type Player } from "@/lib/mock-players";
+import { type Player } from "@/lib/mock-players";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Search,
   RotateCcw,
@@ -101,7 +102,68 @@ const emptyFilters: Filters = {
 
 export function PlayerQueryPage() {
   const { t } = useT();
-  const [players, setPlayers] = useState<Player[]>(mockPlayers);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [loading, setLoading] = useState(true);
+  // Map DB uuid -> user_id for updates
+  const [idMap, setIdMap] = useState<Record<string, string>>({});
+
+  const loadPlayers = async () => {
+    setLoading(true);
+    const [{ data: profs }, { data: wals }] = await Promise.all([
+      supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.from("wallets").select("*"),
+    ]);
+    const wmap: Record<string, Record<string, unknown>> = {};
+    (wals ?? []).forEach((w) => { wmap[w.user_id as string] = w as Record<string, unknown>; });
+    const fmtDt = (s: string | null | undefined) =>
+      s ? new Date(s).toISOString().slice(5, 16).replace("T", " ") : "";
+    const mapped: Player[] = (profs ?? []).map((p) => {
+      const w = (wmap[p.id as string] ?? {}) as Record<string, number | string | null>;
+      const n = (k: string) => Number(w[k] ?? 0);
+      return {
+        playerID: p.id as string,
+        nick: (p.nick as string) ?? "",
+        superiorID: Number(p.superior_id ?? 0),
+        deviceType: (p.device_type as string) ?? "",
+        vip: Number(p.vip ?? 0),
+        phone: (p.phone as string) ?? "",
+        email: (p.email as string) ?? "",
+        channelCode: (p.channel_code as string) ?? "",
+        sourceChannel: (p.source_channel as string) ?? "",
+        level: (p.level as string) ?? "",
+        coins: n("coins"),
+        totalPayed: n("total_payed"),
+        totalWithdrawal: n("total_withdrawal"),
+        totalBets: n("total_bets"),
+        remainBets: n("remain_bets"),
+        totalWin: n("total_win"),
+        todayWin: n("today_win"),
+        lastPayed: fmtDt(w.last_payed_at as string | null),
+        createTime: fmtDt(p.created_at as string | null),
+        lastLogin: fmtDt(p.last_login as string | null),
+        remark: (p.remark as string) ?? "",
+        status: (p.status as "active" | "disabled") ?? "active",
+        safeCoins: n("safe_coins"),
+        addr: (p.addr as string) ?? "",
+        goldInTransfer: n("gold_in_transfer"),
+        totalPayedTimes: n("total_payed_times"),
+        totalWithdrawTimes: n("total_withdraw_times"),
+        totalPayout: n("total_payout"),
+        registerIp: (p.register_ip as string) ?? "",
+        registerCountry: (p.register_country as string) ?? "",
+        registerMac: (p.register_mac as string) ?? "",
+        loginIp: (p.login_ip as string) ?? "",
+        loginCountry: (p.login_country as string) ?? "",
+      };
+    });
+    const im: Record<string, string> = {};
+    mapped.forEach((m) => { im[m.playerID] = m.playerID; });
+    setIdMap(im);
+    setPlayers(mapped);
+    setLoading(false);
+  };
+
+  useEffect(() => { loadPlayers(); }, []);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [applied, setApplied] = useState<Filters>(emptyFilters);
@@ -175,8 +237,11 @@ export function PlayerQueryPage() {
     setSelected(new Set());
   };
 
-  const setStatus = (ids: string[], status: "active" | "disabled") => {
+  const setStatus = async (ids: string[], status: "active" | "disabled") => {
     if (ids.length === 0) return;
+    const uuids = ids.map((i) => idMap[i]).filter(Boolean);
+    const { error } = await supabase.from("profiles").update({ status }).in("id", uuids);
+    if (error) { alert(error.message); return; }
     setPlayers((prev) =>
       prev.map((p) => (ids.includes(p.playerID) ? { ...p, status } : p)),
     );
@@ -204,13 +269,17 @@ export function PlayerQueryPage() {
     URL.revokeObjectURL(url);
   };
 
-  const applyRemark = (text: string) => {
+  const applyRemark = async (text: string) => {
     const ids = Array.from(selected);
+    const uuids = ids.map((i) => idMap[i]).filter(Boolean);
+    const { error } = await supabase.from("profiles").update({ remark: text }).in("id", uuids);
+    if (error) { alert(error.message); return; }
     setPlayers((prev) => prev.map((p) => (ids.includes(p.playerID) ? { ...p, remark: text } : p)));
     setRemarkOpen(false);
   };
 
   const saveRemainBets = (id: string, value: number) => {
+    // wallets are not client-writable — local only for now
     setPlayers((prev) => prev.map((p) => (p.playerID === id ? { ...p, remainBets: value } : p)));
     setAdjustFor(null);
   };
