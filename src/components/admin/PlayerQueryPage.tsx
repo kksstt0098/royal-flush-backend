@@ -611,7 +611,7 @@ export function PlayerQueryPage() {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={columns.length + 1} className="p-6 text-center text-muted-foreground text-[12px]">
-                    No data
+                    {loading ? "Loading…" : "No data"}
                   </td>
                 </tr>
               )}
@@ -651,10 +651,14 @@ export function PlayerQueryPage() {
             setStatus([detailsFor.playerID], detailsFor.status === "active" ? "disabled" : "active")
           }
           onEditRemark={(text) => {
-            setPlayers((prev) =>
-              prev.map((p) => (p.playerID === detailsFor.playerID ? { ...p, remark: text } : p)),
-            );
-            setDetailsFor({ ...detailsFor, remark: text });
+            const uid = idMap[detailsFor.playerID];
+            supabase.from("profiles").update({ remark: text }).eq("id", uid).then(({ error }) => {
+              if (error) { alert(error.message); return; }
+              setPlayers((prev) =>
+                prev.map((p) => (p.playerID === detailsFor.playerID ? { ...p, remark: text } : p)),
+              );
+              setDetailsFor({ ...detailsFor, remark: text });
+            });
           }}
         />
       )}
