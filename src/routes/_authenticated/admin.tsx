@@ -127,6 +127,8 @@ function AdminPage() {
           <CSConfigurePage />
         ) : active === "vipConfig" ? (
           <VipConfigPage />
+        ) : active === "levelConfig" ? (
+          <LevelConfigPage />
         ) : (
           <WithdrawalPaymentPage />
         )}
