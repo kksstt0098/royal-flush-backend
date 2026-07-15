@@ -163,6 +163,8 @@ export const dict: Dict = {
   withdrawalOrderDetails: { en: "Withdrawal Order Details", my: "ငွေထုတ်အော်ဒါအသေးစိတ်" },
   vipConfig: { en: "VIP Config", my: "VIP ဖော်ပြပုံ" },
   vipManagement: { en: "VIP Management", my: "VIP စီမံခန့်ခွဲမှု" },
+  levelConfigGroup: { en: "Level Config", my: "အဆင့် Config" },
+  levelConfig: { en: "Level config", my: "အဆင့် config" },
 };
 
 type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (k: keyof typeof dict) => string };

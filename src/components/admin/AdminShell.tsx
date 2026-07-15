@@ -36,6 +36,7 @@ import {
   Download,
   Loader2,
   ShieldCheck,
+  Layers,
 } from "lucide-react";
 
 export type PageKey =
@@ -53,7 +54,8 @@ export type PageKey =
   | "mailBox"
   | "marquee"
   | "csConfigure"
-  | "vipConfig";
+  | "vipConfig"
+  | "levelConfig";
 
 type NavItem = { key: keyof typeof dict; page?: PageKey };
 type NavGroup = {
@@ -126,10 +128,13 @@ const groups: NavGroup[] = [
     ],
   },
   {
-    key: "vip",
-    label: "vipConfig",
-    icon: ShieldCheck,
-    page: "vipConfig",
+    key: "levelConfig",
+    label: "levelConfigGroup",
+    icon: Layers,
+    children: [
+      { key: "vipConfig", page: "vipConfig" },
+      { key: "levelConfig", page: "levelConfig" },
+    ],
   },
 ];
 
@@ -147,7 +152,7 @@ export function AdminShell({
   onCloseTab: (p: PageKey) => void;
 }) {
   const { t, lang, setLang } = useT();
-  const [open, setOpen] = useState<Record<string, boolean>>({ player: true, cash: true });
+  const [open, setOpen] = useState<Record<string, boolean>>({ player: true, cash: true, levelConfig: true });
   const toggle = (k: string) => setOpen((o) => ({ ...o, [k]: !o[k] }));
   const navigate = useNavigate();
   const { user } = useSession();
