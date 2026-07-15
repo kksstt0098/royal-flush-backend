@@ -152,7 +152,7 @@ export function AdminShell({
   onCloseTab: (p: PageKey) => void;
 }) {
   const { t, lang, setLang } = useT();
-  const [open, setOpen] = useState<Record<string, boolean>>({ player: true, cash: true });
+  const [open, setOpen] = useState<Record<string, boolean>>({ player: true, cash: true, levelConfig: true });
   const toggle = (k: string) => setOpen((o) => ({ ...o, [k]: !o[k] }));
   const navigate = useNavigate();
   const { user } = useSession();
