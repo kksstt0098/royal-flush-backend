@@ -1,18 +1,14 @@
-import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
-import { Plus, Pencil, Check, X, Upload, Layers } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Plus, Pencil, Check, X, Layers, Trash2 } from "lucide-react";
 
-type Level = {
+type StatusLevel = {
   id: string;
-  levelNumber: number;
   name: string;
-  iconDataUrl?: string;
-  minExperience: number;
-  minTurnover: number;
-  levelReward: number;
-  dailyWithdraw: number | null;
-  weeklyWithdraw: number | null;
-  monthlyWithdraw: number | null;
-  turnoverMultiplier: number;
+  color: string;
+  description: string;
+  blockWithdraw: boolean;
+  blockBonus: boolean;
+  blockDeposit: boolean;
   isActive: boolean;
   createdAt: string;
   createdBy: string;
@@ -20,27 +16,31 @@ type Level = {
   updatedBy: string;
 };
 
-const MOCK_LEVELS: Level[] = [
-  { id: "gl1", levelNumber: 1, name: "Bronze", minExperience: 0, minTurnover: 0, levelReward: 0, dailyWithdraw: 50000, weeklyWithdraw: 200000, monthlyWithdraw: 500000, turnoverMultiplier: 1, isActive: true, createdAt: "2026-01-05", createdBy: "vyy", updatedAt: "2026-06-01", updatedBy: "vyy" },
-  { id: "gl2", levelNumber: 2, name: "Silver", minExperience: 5000, minTurnover: 100000, levelReward: 500, dailyWithdraw: 100000, weeklyWithdraw: 400000, monthlyWithdraw: 1000000, turnoverMultiplier: 1, isActive: true, createdAt: "2026-01-05", createdBy: "vyy", updatedAt: "2026-06-01", updatedBy: "vyy" },
-  { id: "gl3", levelNumber: 3, name: "Gold", minExperience: 20000, minTurnover: 500000, levelReward: 2500, dailyWithdraw: 250000, weeklyWithdraw: 1000000, monthlyWithdraw: 2500000, turnoverMultiplier: 1.2, isActive: true, createdAt: "2026-01-05", createdBy: "vyy", updatedAt: "2026-06-01", updatedBy: "khine" },
-];
+const today = () => new Date().toISOString().slice(0, 10);
 
-const fmt = (n: number | null | undefined) => (n == null ? "—" : n.toLocaleString());
+const MOCK_LEVELS: StatusLevel[] = [
+  { id: "sl1", name: "Normal", color: "#22c55e", description: "Default status. No restrictions.", blockWithdraw: false, blockBonus: false, blockDeposit: false, isActive: true, createdAt: "2026-01-05", createdBy: "vyy", updatedAt: "2026-06-01", updatedBy: "vyy" },
+  { id: "sl2", name: "Withdrawal Block", color: "#ef4444", description: "Player cannot withdraw.", blockWithdraw: true, blockBonus: false, blockDeposit: false, isActive: true, createdAt: "2026-01-05", createdBy: "vyy", updatedAt: "2026-06-01", updatedBy: "vyy" },
+  { id: "sl3", name: "Bonus Block", color: "#f59e0b", description: "Player is excluded from bonuses.", blockWithdraw: false, blockBonus: true, blockDeposit: false, isActive: true, createdAt: "2026-01-05", createdBy: "vyy", updatedAt: "2026-06-01", updatedBy: "khine" },
+];
 
 export function LevelConfigPage() {
   const [levels, setLevels] = useState(MOCK_LEVELS);
-  const [editing, setEditing] = useState<Level | null>(null);
+  const [editing, setEditing] = useState<StatusLevel | null>(null);
   const [creating, setCreating] = useState(false);
 
   const toggleActive = (id: string) =>
     setLevels((ls) =>
       ls.map((l) =>
         l.id === id
-          ? { ...l, isActive: !l.isActive, updatedAt: new Date().toISOString().slice(0, 10), updatedBy: "vyy" }
+          ? { ...l, isActive: !l.isActive, updatedAt: today(), updatedBy: "vyy" }
           : l,
       ),
     );
+  const remove = (id: string) => {
+    if (!confirm("Delete this level?")) return;
+    setLevels((ls) => ls.filter((l) => l.id !== id));
+  };
 
   return (
     <div className="bg-panel border border-panel-border rounded-md min-h-[calc(100vh-140px)]">
@@ -59,22 +59,7 @@ export function LevelConfigPage() {
         <table className="w-full text-[12.5px]">
           <thead className="bg-muted/30 text-[11.5px] uppercase text-muted-foreground">
             <tr>
-              {[
-                "#",
-                "Name",
-                "Min XP",
-                "Min Turnover",
-                "Level Reward",
-                "Daily WD",
-                "Weekly WD",
-                "Monthly WD",
-                "Multiplier",
-                "Status",
-                "Created",
-                "Updated",
-                "Operators",
-                "",
-              ].map((h) => (
+              {["Name", "Description", "Restrictions", "Status", "Created", "Updated", "Operators", ""].map((h) => (
                 <th key={h} className="text-left px-3 py-2 font-medium whitespace-nowrap">
                   {h}
                 </th>
@@ -82,31 +67,36 @@ export function LevelConfigPage() {
             </tr>
           </thead>
           <tbody>
-            {[...levels]
-              .sort((a, b) => a.levelNumber - b.levelNumber)
-              .map((l) => {
-                const operators = Array.from(new Set([l.createdBy, l.updatedBy])).join(", ");
-                return (
-                  <tr key={l.id} className="border-t border-panel-border hover:bg-muted/20">
-                    <td className="px-3 py-2 tabular-nums">{l.levelNumber}</td>
-                    <td className="px-3 py-2 font-medium">
-                      <div className="flex items-center gap-2">
-                        {l.iconDataUrl ? (
-                          <img src={l.iconDataUrl} alt="" className="w-6 h-6 rounded-sm object-cover border border-panel-border" />
-                        ) : (
-                          <div className="w-6 h-6 rounded-sm bg-muted" />
-                        )}
-                        {l.name}
+            {levels.map((l) => {
+              const operators = Array.from(new Set([l.createdBy, l.updatedBy])).join(", ");
+              const restrictions = [
+                l.blockWithdraw && "No withdraw",
+                l.blockBonus && "No bonus",
+                l.blockDeposit && "No deposit",
+              ].filter(Boolean) as string[];
+              return (
+                <tr key={l.id} className="border-t border-panel-border hover:bg-muted/20">
+                  <td className="px-3 py-2 font-medium">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: l.color }} />
+                      {l.name}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 text-foreground/80 max-w-[320px] truncate">{l.description || "—"}</td>
+                  <td className="px-3 py-2">
+                    {restrictions.length === 0 ? (
+                      <span className="text-muted-foreground">None</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {restrictions.map((r) => (
+                          <span key={r} className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-[11px] bg-danger/15 text-danger">
+                            {r}
+                          </span>
+                        ))}
                       </div>
-                    </td>
-                    <td className="px-3 py-2 tabular-nums">{fmt(l.minExperience)}</td>
-                    <td className="px-3 py-2 tabular-nums">{fmt(l.minTurnover)}</td>
-                    <td className="px-3 py-2 tabular-nums">{fmt(l.levelReward)}</td>
-                    <td className="px-3 py-2 tabular-nums">{fmt(l.dailyWithdraw)}</td>
-                    <td className="px-3 py-2 tabular-nums">{fmt(l.weeklyWithdraw)}</td>
-                    <td className="px-3 py-2 tabular-nums">{fmt(l.monthlyWithdraw)}</td>
-                    <td className="px-3 py-2 tabular-nums">×{l.turnoverMultiplier}</td>
-                    <td className="px-3 py-2">
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
                       <span
                         className={
                           "inline-flex items-center px-1.5 py-0.5 rounded-sm text-[11px] " +
@@ -142,11 +132,18 @@ export function LevelConfigPage() {
                         >
                           {l.isActive ? <X className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
                         </button>
+                      <button
+                        title="Delete"
+                        onClick={() => remove(l.id)}
+                        className="h-7 w-7 inline-flex items-center justify-center rounded-sm hover:bg-danger/10 text-danger"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                       </div>
                     </td>
                   </tr>
-                );
-              })}
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -159,7 +156,7 @@ export function LevelConfigPage() {
           }}
           onSave={(l) => {
             if (editing) setLevels((ls) => ls.map((x) => (x.id === l.id ? l : x)));
-            else setLevels((ls) => [...ls, { ...l, id: "gl" + (ls.length + 1) }]);
+            else setLevels((ls) => [...ls, { ...l, id: "sl" + Date.now() }]);
             setEditing(null);
             setCreating(false);
           }}
@@ -186,161 +183,77 @@ function LevelEditor({
   onClose,
   onSave,
 }: {
-  level: Level | null;
+  level: StatusLevel | null;
   onClose: () => void;
-  onSave: (l: Level) => void;
+  onSave: (l: StatusLevel) => void;
 }) {
-  const today = new Date().toISOString().slice(0, 10);
-  const [f, setF] = useState<Level>(
+  const now = today();
+  const [f, setF] = useState<StatusLevel>(
     level ?? {
       id: "",
-      levelNumber: 1,
       name: "",
-      minExperience: 0,
-      minTurnover: 0,
-      levelReward: 0,
-      dailyWithdraw: null,
-      weeklyWithdraw: null,
-      monthlyWithdraw: null,
-      turnoverMultiplier: 1,
+      color: "#3b82f6",
+      description: "",
+      blockWithdraw: false,
+      blockBonus: false,
+      blockDeposit: false,
       isActive: true,
-      createdAt: today,
+      createdAt: now,
       createdBy: "vyy",
-      updatedAt: today,
+      updatedAt: now,
       updatedBy: "vyy",
     },
   );
-  const [iconError, setIconError] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
-  const num = (v: string) => (v === "" ? 0 : Number(v));
-
-  const handleIcon = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setIconError("Please choose an image file.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = String(reader.result);
-      const img = new Image();
-      img.onload = () => {
-        if (img.width !== 240 || img.height !== 240) {
-          setIconError(`Image must be exactly 240×240 px (got ${img.width}×${img.height}).`);
-          return;
-        }
-        setIconError(null);
-        setF((prev) => ({ ...prev, iconDataUrl: dataUrl }));
-      };
-      img.onerror = () => setIconError("Could not read image.");
-      img.src = dataUrl;
-    };
-    reader.readAsDataURL(file);
-  };
+  const toggle = (k: keyof StatusLevel) => setF((p) => ({ ...p, [k]: !p[k] }));
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-panel border border-panel-border rounded-md w-full max-w-3xl max-h-[92vh] overflow-auto"
+        className="bg-panel border border-panel-border rounded-md w-full max-w-md max-h-[92vh] overflow-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="h-11 px-4 flex items-center justify-between border-b border-panel-border bg-muted/30 sticky top-0">
-          <div className="text-[13px] font-semibold">{level ? `Edit ${level.name}` : "New level config"}</div>
+          <div className="text-[13px] font-semibold">{level ? `Edit ${level.name}` : "New level"}</div>
           <X className="w-4 h-4 cursor-pointer hover:text-danger" onClick={onClose} />
         </div>
 
-        <div className="p-4 grid grid-cols-3 gap-4">
-          {/* Icon uploader */}
-          <div className="col-span-3 md:col-span-1 flex flex-col items-center gap-2">
-            <div className="text-[11.5px] text-muted-foreground self-start">Icon (240 × 240 px)</div>
-            <div className="w-[240px] h-[240px] rounded-md border border-dashed border-panel-border bg-background flex items-center justify-center overflow-hidden">
-              {f.iconDataUrl ? (
-                <img src={f.iconDataUrl} alt="icon" className="w-full h-full object-cover" />
-              ) : (
-                <div className="text-[11px] text-muted-foreground text-center px-2">
-                  No icon yet.
-                  <br />
-                  Upload a 240×240 image.
-                </div>
-              )}
+        <div className="p-4 grid grid-cols-1 gap-3 text-[12.5px]">
+          <Field label="Name">
+            <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} className={inputCls} placeholder="e.g. Withdrawal Block" />
+          </Field>
+          <Field label="Color">
+            <div className="flex items-center gap-2">
+              <input type="color" value={f.color} onChange={(e) => setF({ ...f, color: e.target.value })} className="h-8 w-12 rounded-sm border border-panel-border bg-background cursor-pointer" />
+              <input value={f.color} onChange={(e) => setF({ ...f, color: e.target.value })} className={inputCls} />
             </div>
-            <input ref={fileRef} type="file" accept="image/*" onChange={handleIcon} className="hidden" />
-            <div className="flex gap-2">
-              <button
-                onClick={() => fileRef.current?.click()}
-                className="h-8 px-3 rounded-sm border border-panel-border text-[12px] flex items-center gap-1 hover:bg-muted/40"
-              >
-                <Upload className="w-3.5 h-3.5" /> Upload icon
-              </button>
-              {f.iconDataUrl && (
-                <button
-                  onClick={() => setF({ ...f, iconDataUrl: undefined })}
-                  className="h-8 px-3 rounded-sm border border-panel-border text-[12px] text-danger hover:bg-danger/10"
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-            {iconError && <div className="text-[11px] text-danger text-center">{iconError}</div>}
+          </Field>
+          <Field label="Description">
+            <textarea value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} className={inputCls + " h-20 py-1.5"} placeholder="Short explanation shown to operators" />
+          </Field>
+
+          <div className="rounded-sm border border-panel-border p-2 space-y-1.5">
+            <div className="text-[11.5px] text-muted-foreground mb-1">Restrictions</div>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={f.blockWithdraw} onChange={() => toggle("blockWithdraw")} />
+              <span>Block withdrawals</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={f.blockBonus} onChange={() => toggle("blockBonus")} />
+              <span>Block bonuses</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={f.blockDeposit} onChange={() => toggle("blockDeposit")} />
+              <span>Block deposits</span>
+            </label>
           </div>
 
-          {/* Fields */}
-          <div className="col-span-3 md:col-span-2 grid grid-cols-2 gap-3 text-[12.5px]">
-            <Field label="Level number">
-              <input type="number" value={f.levelNumber} onChange={(e) => setF({ ...f, levelNumber: num(e.target.value) })} className={inputCls} />
-            </Field>
-            <Field label="Name">
-              <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} className={inputCls} placeholder="Gold" />
-            </Field>
-            <Field label="Min experience to reach">
-              <input type="number" value={f.minExperience} onChange={(e) => setF({ ...f, minExperience: num(e.target.value) })} className={inputCls} />
-            </Field>
-            <Field label="Min turnover to reach">
-              <input type="number" value={f.minTurnover} onChange={(e) => setF({ ...f, minTurnover: num(e.target.value) })} className={inputCls} />
-            </Field>
-            <Field label="Level reward (one-time)">
-              <input type="number" value={f.levelReward} onChange={(e) => setF({ ...f, levelReward: num(e.target.value) })} className={inputCls} />
-            </Field>
-            <Field label="Turnover multiplier">
-              <input type="number" step="0.1" value={f.turnoverMultiplier} onChange={(e) => setF({ ...f, turnoverMultiplier: num(e.target.value) })} className={inputCls} />
-            </Field>
-            <Field label="Daily WD">
-              <input
-                type="number"
-                value={f.dailyWithdraw ?? ""}
-                onChange={(e) => setF({ ...f, dailyWithdraw: e.target.value === "" ? null : num(e.target.value) })}
-                className={inputCls}
-                placeholder="unlimited"
-              />
-            </Field>
-            <Field label="Weekly WD">
-              <input
-                type="number"
-                value={f.weeklyWithdraw ?? ""}
-                onChange={(e) => setF({ ...f, weeklyWithdraw: e.target.value === "" ? null : num(e.target.value) })}
-                className={inputCls}
-                placeholder="unlimited"
-              />
-            </Field>
-            <Field label="Monthly WD">
-              <input
-                type="number"
-                value={f.monthlyWithdraw ?? ""}
-                onChange={(e) => setF({ ...f, monthlyWithdraw: e.target.value === "" ? null : num(e.target.value) })}
-                className={inputCls}
-                placeholder="unlimited"
-              />
-            </Field>
-            <Field label="Status">
-              <label className="inline-flex items-center gap-2 h-8">
-                <input type="checkbox" checked={f.isActive} onChange={(e) => setF({ ...f, isActive: e.target.checked })} />
-                <span>{f.isActive ? "Active" : "Inactive"}</span>
-              </label>
-            </Field>
-          </div>
+          <Field label="Status">
+            <label className="inline-flex items-center gap-2 h-8">
+              <input type="checkbox" checked={f.isActive} onChange={(e) => setF({ ...f, isActive: e.target.checked })} />
+              <span>{f.isActive ? "Active" : "Inactive"}</span>
+            </label>
+          </Field>
         </div>
 
         <div className="px-4 py-3 border-t border-panel-border flex justify-end gap-2 sticky bottom-0 bg-panel">
@@ -348,8 +261,9 @@ function LevelEditor({
             Cancel
           </button>
           <button
-            onClick={() => onSave({ ...f, updatedAt: today, updatedBy: "vyy" })}
-            className="h-8 px-4 rounded-sm bg-primary text-primary-foreground text-[12.5px] hover:bg-primary/90"
+            disabled={!f.name.trim()}
+            onClick={() => onSave({ ...f, updatedAt: now, updatedBy: "vyy" })}
+            className="h-8 px-4 rounded-sm bg-primary text-primary-foreground text-[12.5px] hover:bg-primary/90 disabled:opacity-50"
           >
             Save
           </button>
