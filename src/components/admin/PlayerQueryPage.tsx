@@ -704,16 +704,21 @@ function PlayerDetailsDialog({
   onClose,
   onToggleStatus,
   onEditRemark,
+  onEditLevel,
 }: {
   player: Player;
   onClose: () => void;
   onToggleStatus: () => void;
   onEditRemark: (text: string) => void;
+  onEditLevel: (level: string) => void;
 }) {
   const { t } = useT();
   const [tab, setTab] = useState<"bank" | "payed" | "withdraw">("payed");
   const [editingRemark, setEditingRemark] = useState(false);
   const [remarkDraft, setRemarkDraft] = useState(player.remark);
+  const levels = useLevels();
+  const activeLevels = levels.filter((l) => l.isActive);
+  const currentLevel = levels.find((l) => l.name === player.level);
 
   const disabled = player.status === "disabled";
   const grossProfit = player.totalPayed - player.totalWithdrawal;
