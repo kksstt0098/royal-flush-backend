@@ -661,6 +661,20 @@ export function PlayerQueryPage() {
               setDetailsFor({ ...detailsFor, remark: text });
             });
           }}
+          onEditLevel={(lvl) => {
+            const uid = idMap[detailsFor.playerID];
+            const apply = () => {
+              setPlayers((prev) =>
+                prev.map((p) => (p.playerID === detailsFor.playerID ? { ...p, level: lvl } : p)),
+              );
+              setDetailsFor({ ...detailsFor, level: lvl });
+            };
+            if (!uid) { apply(); return; }
+            supabase.from("profiles").update({ level: lvl }).eq("id", uid).then(({ error }) => {
+              if (error) { alert(error.message); return; }
+              apply();
+            });
+          }}
         />
       )}
 
