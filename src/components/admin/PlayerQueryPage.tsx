@@ -817,8 +817,27 @@ function PlayerDetailsDialog({
                 </InfoRow>
                 <InfoRow label={t("goldInTransfer")}>{player.goldInTransfer ?? 0}</InfoRow>
                 <InfoRow label={t("level")}>
-                  <button className="mr-2 h-6 px-2 rounded-sm bg-info text-info-foreground text-[11px]">{t("edit")}</button>
-                  {player.level}
+                  <span className="inline-flex items-center gap-2">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ background: currentLevel ? levelColor(currentLevel) : "#94a3b8" }}
+                    />
+                    <select
+                      className={inputCls + " max-w-[240px]"}
+                      value={player.level ?? ""}
+                      onChange={(e) => onEditLevel(e.target.value)}
+                    >
+                      <option value="">— none —</option>
+                      {activeLevels.map((l) => (
+                        <option key={l.id} value={l.name}>
+                          {l.name}
+                        </option>
+                      ))}
+                      {player.level && !activeLevels.some((l) => l.name === player.level) && (
+                        <option value={player.level}>{player.level} (inactive)</option>
+                      )}
+                    </select>
+                  </span>
                 </InfoRow>
                 <InfoRow label={t("status")}>
                   <button
