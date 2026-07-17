@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { type Player } from "@/lib/mock-players";
 import { supabase } from "@/integrations/supabase/client";
+import { levelColor, useLevels } from "@/lib/level-store";
 import {
   Search,
   RotateCcw,
