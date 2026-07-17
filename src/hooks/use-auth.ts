@@ -48,3 +48,21 @@ export function useRoles(userId: string | undefined): { roles: AppRole[]; loadin
 export function isStaff(roles: AppRole[]) {
   return roles.some((r) => r === "admin" || r === "auditor" || r === "payer");
 }
+
+export function operatorNameFromUser(user: User | null | undefined): string {
+  if (!user) return "system";
+  const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+  const candidate =
+    (meta.username as string) ||
+    (meta.user_name as string) ||
+    (meta.preferred_username as string) ||
+    (meta.name as string) ||
+    (user.email ? user.email.split("@")[0] : "") ||
+    user.id;
+  return String(candidate);
+}
+
+export function useOperatorName(): string {
+  const { user } = useSession();
+  return operatorNameFromUser(user);
+}
