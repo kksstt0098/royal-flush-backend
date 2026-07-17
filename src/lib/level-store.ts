@@ -75,22 +75,22 @@ export const levelStore = {
     state = next;
     emit();
   },
-  upsert: (l: StatusLevel) => {
+  upsert: (l: StatusLevel, operator: string = "system") => {
     const now = today();
-    const withStamp = { ...l, updatedAt: now, updatedBy: l.updatedBy || "vyy" };
+    const withStamp = { ...l, updatedAt: now, updatedBy: operator };
     const exists = state.some((x) => x.id === l.id);
     state = exists
       ? state.map((x) => (x.id === l.id ? withStamp : x))
-      : [...state, { ...withStamp, id: l.id || "sl" + Date.now(), createdAt: withStamp.createdAt || now, createdBy: withStamp.createdBy || "vyy" }];
+      : [...state, { ...withStamp, id: l.id || "sl" + Date.now(), createdAt: withStamp.createdAt || now, createdBy: operator }];
     emit();
   },
   remove: (id: string) => {
     state = state.filter((x) => x.id !== id);
     emit();
   },
-  toggle: (id: string) => {
+  toggle: (id: string, operator: string = "system") => {
     const now = today();
-    state = state.map((x) => (x.id === id ? { ...x, isActive: !x.isActive, updatedAt: now, updatedBy: "vyy" } : x));
+    state = state.map((x) => (x.id === id ? { ...x, isActive: !x.isActive, updatedAt: now, updatedBy: operator } : x));
     emit();
   },
 };
