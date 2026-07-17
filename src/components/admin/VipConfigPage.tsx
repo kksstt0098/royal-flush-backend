@@ -1,5 +1,6 @@
 import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
 import { Plus, Pencil, Check, X, Upload, Crown } from "lucide-react";
+import { useOperatorName } from "@/hooks/use-auth";
 
 type Level = {
   id: string;
@@ -34,12 +35,13 @@ export function VipConfigPage() {
   const [levels, setLevels] = useState(MOCK_LEVELS);
   const [editing, setEditing] = useState<Level | null>(null);
   const [creating, setCreating] = useState(false);
+  const operator = useOperatorName();
 
   const toggleActive = (id: string) =>
     setLevels((ls) =>
       ls.map((l) =>
         l.id === id
-          ? { ...l, isActive: !l.isActive, updatedAt: new Date().toISOString().slice(0, 10), updatedBy: "vyy" }
+          ? { ...l, isActive: !l.isActive, updatedAt: new Date().toISOString().slice(0, 10), updatedBy: operator }
           : l,
       ),
     );
@@ -153,6 +155,7 @@ export function VipConfigPage() {
       {(editing || creating) && (
         <LevelEditor
           level={editing}
+          operator={operator}
           onClose={() => {
             setEditing(null);
             setCreating(false);
@@ -185,10 +188,12 @@ function LevelEditor({
   level,
   onClose,
   onSave,
+  operator,
 }: {
   level: Level | null;
   onClose: () => void;
   onSave: (l: Level) => void;
+  operator: string;
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const [f, setF] = useState<Level>(
@@ -207,9 +212,9 @@ function LevelEditor({
       turnoverMultiplier: 1,
       isActive: true,
       createdAt: today,
-      createdBy: "vyy",
+      createdBy: operator,
       updatedAt: today,
-      updatedBy: "vyy",
+      updatedBy: operator,
     },
   );
   const [iconError, setIconError] = useState<string | null>(null);
@@ -350,7 +355,7 @@ function LevelEditor({
             Cancel
           </button>
           <button
-            onClick={() => onSave({ ...f, updatedAt: today, updatedBy: "vyy" })}
+            onClick={() => onSave({ ...f, updatedAt: today, updatedBy: operator })}
             className="h-8 px-4 rounded-sm bg-primary text-primary-foreground text-[12.5px] hover:bg-primary/90"
           >
             Save
