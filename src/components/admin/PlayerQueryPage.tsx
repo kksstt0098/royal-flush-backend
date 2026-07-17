@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useT } from "@/lib/i18n";
 import { type Player } from "@/lib/mock-players";
 import { supabase } from "@/integrations/supabase/client";
+import { levelColor, useLevels } from "@/lib/level-store";
 import {
   Search,
   RotateCcw,
@@ -660,6 +661,20 @@ export function PlayerQueryPage() {
               setDetailsFor({ ...detailsFor, remark: text });
             });
           }}
+          onEditLevel={(lvl) => {
+            const uid = idMap[detailsFor.playerID];
+            const apply = () => {
+              setPlayers((prev) =>
+                prev.map((p) => (p.playerID === detailsFor.playerID ? { ...p, level: lvl } : p)),
+              );
+              setDetailsFor({ ...detailsFor, level: lvl });
+            };
+            if (!uid) { apply(); return; }
+            supabase.from("profiles").update({ level: lvl }).eq("id", uid).then(({ error }) => {
+              if (error) { alert(error.message); return; }
+              apply();
+            });
+          }}
         />
       )}
 
@@ -689,16 +704,21 @@ function PlayerDetailsDialog({
   onClose,
   onToggleStatus,
   onEditRemark,
+  onEditLevel,
 }: {
   player: Player;
   onClose: () => void;
   onToggleStatus: () => void;
   onEditRemark: (text: string) => void;
+  onEditLevel: (level: string) => void;
 }) {
   const { t } = useT();
   const [tab, setTab] = useState<"bank" | "payed" | "withdraw">("payed");
   const [editingRemark, setEditingRemark] = useState(false);
   const [remarkDraft, setRemarkDraft] = useState(player.remark);
+  const levels = useLevels();
+  const activeLevels = levels.filter((l) => l.isActive);
+  const currentLevel = levels.find((l) => l.name === player.level);
 
   const disabled = player.status === "disabled";
   const grossProfit = player.totalPayed - player.totalWithdrawal;
@@ -797,8 +817,27 @@ function PlayerDetailsDialog({
                 </InfoRow>
                 <InfoRow label={t("goldInTransfer")}>{player.goldInTransfer ?? 0}</InfoRow>
                 <InfoRow label={t("level")}>
-                  <button className="mr-2 h-6 px-2 rounded-sm bg-info text-info-foreground text-[11px]">{t("edit")}</button>
-                  {player.level}
+                  <span className="inline-flex items-center gap-2">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ background: currentLevel ? levelColor(currentLevel) : "#94a3b8" }}
+                    />
+                    <select
+                      className={inputCls + " max-w-[240px]"}
+                      value={player.level ?? ""}
+                      onChange={(e) => onEditLevel(e.target.value)}
+                    >
+                      <option value="">— none —</option>
+                      {activeLevels.map((l) => (
+                        <option key={l.id} value={l.name}>
+                          {l.name}
+                        </option>
+                      ))}
+                      {player.level && !activeLevels.some((l) => l.name === player.level) && (
+                        <option value={player.level}>{player.level} (inactive)</option>
+                      )}
+                    </select>
+                  </span>
                 </InfoRow>
                 <InfoRow label={t("status")}>
                   <button

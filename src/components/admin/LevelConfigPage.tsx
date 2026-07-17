@@ -1,45 +1,17 @@
 import { useState, type ReactNode } from "react";
 import { Plus, Pencil, Check, X, Layers, Trash2 } from "lucide-react";
-
-type StatusLevel = {
-  id: string;
-  name: string;
-  color: string;
-  description: string;
-  blockWithdraw: boolean;
-  blockBonus: boolean;
-  blockDeposit: boolean;
-  isActive: boolean;
-  createdAt: string;
-  createdBy: string;
-  updatedAt: string;
-  updatedBy: string;
-};
+import { levelColor, levelStore, useLevels, type StatusLevel } from "@/lib/level-store";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-const MOCK_LEVELS: StatusLevel[] = [
-  { id: "sl1", name: "Normal", color: "#22c55e", description: "Default status. No restrictions.", blockWithdraw: false, blockBonus: false, blockDeposit: false, isActive: true, createdAt: "2026-01-05", createdBy: "vyy", updatedAt: "2026-06-01", updatedBy: "vyy" },
-  { id: "sl2", name: "Withdrawal Block", color: "#ef4444", description: "Player cannot withdraw.", blockWithdraw: true, blockBonus: false, blockDeposit: false, isActive: true, createdAt: "2026-01-05", createdBy: "vyy", updatedAt: "2026-06-01", updatedBy: "vyy" },
-  { id: "sl3", name: "Bonus Block", color: "#f59e0b", description: "Player is excluded from bonuses.", blockWithdraw: false, blockBonus: true, blockDeposit: false, isActive: true, createdAt: "2026-01-05", createdBy: "vyy", updatedAt: "2026-06-01", updatedBy: "khine" },
-];
-
 export function LevelConfigPage() {
-  const [levels, setLevels] = useState(MOCK_LEVELS);
+  const levels = useLevels();
   const [editing, setEditing] = useState<StatusLevel | null>(null);
   const [creating, setCreating] = useState(false);
 
-  const toggleActive = (id: string) =>
-    setLevels((ls) =>
-      ls.map((l) =>
-        l.id === id
-          ? { ...l, isActive: !l.isActive, updatedAt: today(), updatedBy: "vyy" }
-          : l,
-      ),
-    );
   const remove = (id: string) => {
     if (!confirm("Delete this level?")) return;
-    setLevels((ls) => ls.filter((l) => l.id !== id));
+    levelStore.remove(id);
   };
 
   return (
@@ -70,6 +42,7 @@ export function LevelConfigPage() {
             {levels.map((l) => {
               const operators = Array.from(new Set([l.createdBy, l.updatedBy])).join(", ");
               const restrictions = [
+                l.blockLogin && "No login",
                 l.blockWithdraw && "No withdraw",
                 l.blockBonus && "No bonus",
                 l.blockDeposit && "No deposit",
@@ -78,7 +51,7 @@ export function LevelConfigPage() {
                 <tr key={l.id} className="border-t border-panel-border hover:bg-muted/20">
                   <td className="px-3 py-2 font-medium">
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: l.color }} />
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: levelColor(l) }} />
                       {l.name}
                     </div>
                   </td>
@@ -124,7 +97,7 @@ export function LevelConfigPage() {
                         </button>
                         <button
                           title={l.isActive ? "Deactivate" : "Activate"}
-                          onClick={() => toggleActive(l.id)}
+                          onClick={() => levelStore.toggle(l.id)}
                           className={
                             "h-7 w-7 inline-flex items-center justify-center rounded-sm " +
                             (l.isActive ? "hover:bg-danger/10 text-danger" : "hover:bg-success/10 text-success")
@@ -155,8 +128,7 @@ export function LevelConfigPage() {
             setCreating(false);
           }}
           onSave={(l) => {
-            if (editing) setLevels((ls) => ls.map((x) => (x.id === l.id ? l : x)));
-            else setLevels((ls) => [...ls, { ...l, id: "sl" + Date.now() }]);
+            levelStore.upsert(l);
             setEditing(null);
             setCreating(false);
           }}
@@ -192,11 +164,11 @@ function LevelEditor({
     level ?? {
       id: "",
       name: "",
-      color: "#3b82f6",
       description: "",
       blockWithdraw: false,
       blockBonus: false,
       blockDeposit: false,
+      blockLogin: false,
       isActive: true,
       createdAt: now,
       createdBy: "vyy",
@@ -222,18 +194,18 @@ function LevelEditor({
           <Field label="Name">
             <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} className={inputCls} placeholder="e.g. Withdrawal Block" />
           </Field>
-          <Field label="Color">
-            <div className="flex items-center gap-2">
-              <input type="color" value={f.color} onChange={(e) => setF({ ...f, color: e.target.value })} className="h-8 w-12 rounded-sm border border-panel-border bg-background cursor-pointer" />
-              <input value={f.color} onChange={(e) => setF({ ...f, color: e.target.value })} className={inputCls} />
-            </div>
-          </Field>
           <Field label="Description">
             <textarea value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} className={inputCls + " h-20 py-1.5"} placeholder="Short explanation shown to operators" />
           </Field>
 
           <div className="rounded-sm border border-panel-border p-2 space-y-1.5">
-            <div className="text-[11.5px] text-muted-foreground mb-1">Restrictions</div>
+            <div className="text-[11.5px] text-muted-foreground mb-1">
+              Restrictions <span className="opacity-70">(color is derived automatically)</span>
+            </div>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={f.blockLogin} onChange={() => toggle("blockLogin")} />
+              <span>Block from entering the game</span>
+            </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={f.blockWithdraw} onChange={() => toggle("blockWithdraw")} />
               <span>Block withdrawals</span>
@@ -246,6 +218,11 @@ function LevelEditor({
               <input type="checkbox" checked={f.blockDeposit} onChange={() => toggle("blockDeposit")} />
               <span>Block deposits</span>
             </label>
+            <div className="flex items-center gap-2 pt-1 text-[11.5px] text-muted-foreground">
+              Preview:
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: levelColor(f) }} />
+              <span style={{ color: levelColor(f) }}>{f.name || "(unnamed)"}</span>
+            </div>
           </div>
 
           <Field label="Status">
