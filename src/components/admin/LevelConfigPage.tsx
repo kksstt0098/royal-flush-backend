@@ -1,11 +1,13 @@
 import { useState, type ReactNode } from "react";
 import { Plus, Pencil, Check, X, Layers, Trash2 } from "lucide-react";
 import { levelColor, levelStore, useLevels, type StatusLevel } from "@/lib/level-store";
+import { useOperatorName } from "@/hooks/use-auth";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
 export function LevelConfigPage() {
   const levels = useLevels();
+  const operator = useOperatorName();
   const [editing, setEditing] = useState<StatusLevel | null>(null);
   const [creating, setCreating] = useState(false);
 
@@ -97,7 +99,7 @@ export function LevelConfigPage() {
                         </button>
                         <button
                           title={l.isActive ? "Deactivate" : "Activate"}
-                          onClick={() => levelStore.toggle(l.id)}
+                          onClick={() => levelStore.toggle(l.id, operator)}
                           className={
                             "h-7 w-7 inline-flex items-center justify-center rounded-sm " +
                             (l.isActive ? "hover:bg-danger/10 text-danger" : "hover:bg-success/10 text-success")
@@ -128,10 +130,11 @@ export function LevelConfigPage() {
             setCreating(false);
           }}
           onSave={(l) => {
-            levelStore.upsert(l);
+            levelStore.upsert(l, operator);
             setEditing(null);
             setCreating(false);
           }}
+          operator={operator}
         />
       )}
     </div>
@@ -154,10 +157,12 @@ function LevelEditor({
   level,
   onClose,
   onSave,
+  operator,
 }: {
   level: StatusLevel | null;
   onClose: () => void;
   onSave: (l: StatusLevel) => void;
+  operator: string;
 }) {
   const now = today();
   const [f, setF] = useState<StatusLevel>(
@@ -171,9 +176,9 @@ function LevelEditor({
       blockLogin: false,
       isActive: true,
       createdAt: now,
-      createdBy: "vyy",
+      createdBy: operator,
       updatedAt: now,
-      updatedBy: "vyy",
+      updatedBy: operator,
     },
   );
 
@@ -239,7 +244,7 @@ function LevelEditor({
           </button>
           <button
             disabled={!f.name.trim()}
-            onClick={() => onSave({ ...f, updatedAt: now, updatedBy: "vyy" })}
+            onClick={() => onSave({ ...f, updatedAt: now, updatedBy: operator })}
             className="h-8 px-4 rounded-sm bg-primary text-primary-foreground text-[12.5px] hover:bg-primary/90 disabled:opacity-50"
           >
             Save
