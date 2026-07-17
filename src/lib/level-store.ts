@@ -42,7 +42,7 @@ function load(): StatusLevel[] {
     if (!raw) return DEFAULTS;
     const parsed = JSON.parse(raw) as StatusLevel[];
     if (!Array.isArray(parsed)) return DEFAULTS;
-    return parsed.map((l) => ({ blockLogin: false, ...l }));
+    return parsed.map((l) => ({ ...l, blockLogin: l.blockLogin ?? false }));
   } catch {
     return DEFAULTS;
   }
