@@ -22,9 +22,9 @@ import {
   RoleMgmtPage,
   PermissionMgmtPage,
   AdminLogsPage,
-  WhitelistPage,
   LoginLogPage,
 } from "@/components/admin/SystemPages";
+import { WhitelistPage } from "@/components/admin/WhitelistPage";
 import { useSession, useRoles, isStaff } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
