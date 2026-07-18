@@ -37,9 +37,9 @@ export const checkClientIp = createServerFn({ method: "POST" })
     try {
       await supabaseAdmin.rpc("log_ip_attempt", {
         _ip: ip,
-        _email: data.email ?? null,
+        _email: data.email ?? "",
         _allowed: !!allowed,
-        _ua: ua,
+        _ua: ua ?? "",
       });
     } catch {
       /* ignore */
