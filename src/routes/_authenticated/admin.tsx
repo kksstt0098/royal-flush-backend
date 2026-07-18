@@ -18,6 +18,13 @@ import { MarqueePage } from "@/components/admin/MarqueePage";
 import { CSConfigurePage } from "@/components/admin/CSConfigurePage";
 import { VipConfigPage } from "@/components/admin/VipConfigPage";
 import { LevelConfigPage } from "@/components/admin/LevelConfigPage";
+import {
+  RoleMgmtPage,
+  PermissionMgmtPage,
+  AdminLogsPage,
+  WhitelistPage,
+  LoginLogPage,
+} from "@/components/admin/SystemPages";
 import { useSession, useRoles, isStaff } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -129,6 +136,16 @@ function AdminPage() {
           <VipConfigPage />
         ) : active === "levelConfig" ? (
           <LevelConfigPage />
+        ) : active === "roleMgmt" ? (
+          <RoleMgmtPage />
+        ) : active === "permissionMgmt" ? (
+          <PermissionMgmtPage />
+        ) : active === "adminLogs" ? (
+          <AdminLogsPage />
+        ) : active === "whitelist" ? (
+          <WhitelistPage />
+        ) : active === "loginLog" ? (
+          <LoginLogPage />
         ) : (
           <WithdrawalPaymentPage />
         )}

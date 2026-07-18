@@ -37,6 +37,7 @@ import {
   Loader2,
   ShieldCheck,
   Layers,
+  Settings,
 } from "lucide-react";
 
 export type PageKey =
@@ -55,7 +56,12 @@ export type PageKey =
   | "marquee"
   | "csConfigure"
   | "vipConfig"
-  | "levelConfig";
+  | "levelConfig"
+  | "roleMgmt"
+  | "permissionMgmt"
+  | "adminLogs"
+  | "whitelist"
+  | "loginLog";
 
 type NavItem = { key: keyof typeof dict; page?: PageKey };
 type NavGroup = {
@@ -134,6 +140,18 @@ const groups: NavGroup[] = [
     children: [
       { key: "vipConfig", page: "vipConfig" },
       { key: "levelConfig", page: "levelConfig" },
+    ],
+  },
+  {
+    key: "system",
+    label: "system",
+    icon: Settings,
+    children: [
+      { key: "roleMgmt", page: "roleMgmt" },
+      { key: "permissionMgmt", page: "permissionMgmt" },
+      { key: "adminLogs", page: "adminLogs" },
+      { key: "whitelist", page: "whitelist" },
+      { key: "loginLog", page: "loginLog" },
     ],
   },
 ];
