@@ -24,9 +24,6 @@ export const PermissionMgmtPage = () => (
 export const AdminLogsPage = () => (
   <Placeholder titleKey="adminLogs" desc="Audit trail of admin actions." />
 );
-export const WhitelistPage = () => (
-  <Placeholder titleKey="whitelist" desc="IP / device whitelist for backend access." />
-);
 export const LoginLogPage = () => (
   <Placeholder titleKey="loginLog" desc="Admin sign-in history and sessions." />
 );
