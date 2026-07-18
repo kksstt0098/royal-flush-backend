@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
+import { getRequest, getRequestIP } from "@tanstack/react-start/server";
 
 function extractIp(req: Request): string | null {
+  const forwarded = getRequestIP({ xForwardedFor: true });
+  if (forwarded) return forwarded;
   const h = req.headers;
   const candidates = [
     h.get("cf-connecting-ip"),
