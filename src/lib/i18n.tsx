@@ -165,6 +165,12 @@ export const dict: Dict = {
   vipManagement: { en: "VIP Management", my: "VIP စီမံခန့်ခွဲမှု" },
   levelConfigGroup: { en: "Level Config", my: "အဆင့် Config" },
   levelConfig: { en: "Level config", my: "အဆင့် config" },
+  system: { en: "System", my: "စနစ်" },
+  roleMgmt: { en: "Role", my: "အခန်းကဏ္ဍ" },
+  permissionMgmt: { en: "Permission", my: "ခွင့်ပြုချက်" },
+  adminLogs: { en: "Admin Logs", my: "အက်ဒမင်မှတ်တမ်း" },
+  whitelist: { en: "Whitelist", my: "Whitelist" },
+  loginLog: { en: "Login Log", my: "ဝင်ရောက်မှတ်တမ်း" },
 };
 
 type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (k: keyof typeof dict) => string };
