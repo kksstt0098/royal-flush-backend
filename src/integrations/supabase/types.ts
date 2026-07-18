@@ -304,6 +304,69 @@ export type Database = {
         }
         Relationships: []
       }
+      ip_whitelist: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          created_by_name: string
+          id: string
+          ip_address: unknown
+          label: string
+          note: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string
+          id?: string
+          ip_address: unknown
+          label?: string
+          note?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string
+          id?: string
+          ip_address?: unknown
+          label?: string
+          note?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ip_whitelist_attempts: {
+        Row: {
+          allowed: boolean
+          created_at: string
+          email: string | null
+          id: string
+          ip_address: unknown
+          user_agent: string | null
+        }
+        Insert: {
+          allowed: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+        }
+        Update: {
+          allowed?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       lobby_banners: {
         Row: {
           active: boolean
@@ -1317,9 +1380,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_ip_allowed: { Args: { _ip: unknown }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       lock_withdrawal: {
         Args: { _id: string; _lock: boolean }
+        Returns: undefined
+      }
+      log_ip_attempt: {
+        Args: { _allowed: boolean; _email: string; _ip: unknown; _ua: string }
         Returns: undefined
       }
       mail_create_campaign: {
