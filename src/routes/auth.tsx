@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
+import { checkClientIp } from "@/lib/ip-check.functions";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -17,6 +18,7 @@ function AuthPage() {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [clientIp, setClientIp] = useState<string | null>(null);
 
   const [factorId, setFactorId] = useState<string | null>(null);
   const [challengeId, setChallengeId] = useState<string | null>(null);
@@ -82,6 +84,15 @@ function AuthPage() {
     setBusy(true);
     setErr(null);
     try {
+      const ipCheck = await checkClientIp({ data: { email } });
+      setClientIp(ipCheck.ip);
+      if (!ipCheck.allowed) {
+        throw new Error(
+          ipCheck.ip
+            ? `Invalid IP: ${ipCheck.ip} is not whitelisted for backend access.`
+            : "Invalid IP: unable to determine your IP address.",
+        );
+      }
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       await startTotpForSession();
@@ -142,6 +153,9 @@ function AuthPage() {
           <p className="text-xs text-muted-foreground mt-1">
             Authorized staff only · Two-factor required
           </p>
+          {clientIp && (
+            <p className="text-[10px] text-muted-foreground mt-1 font-mono">IP: {clientIp}</p>
+          )}
         </div>
 
         {stage === "password" && (
