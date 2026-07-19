@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_login_logs: {
+        Row: {
+          admin_role: string | null
+          created_at: string
+          failure_reason:
+            | Database["public"]["Enums"]["login_failure_reason"]
+            | null
+          id: string
+          ip_address: unknown
+          logged_in_at: string
+          logged_out_at: string | null
+          session_id: string | null
+          status: Database["public"]["Enums"]["login_status"]
+          user_agent: string | null
+          user_id: string | null
+          username: string
+        }
+        Insert: {
+          admin_role?: string | null
+          created_at?: string
+          failure_reason?:
+            | Database["public"]["Enums"]["login_failure_reason"]
+            | null
+          id?: string
+          ip_address?: unknown
+          logged_in_at?: string
+          logged_out_at?: string | null
+          session_id?: string | null
+          status: Database["public"]["Enums"]["login_status"]
+          user_agent?: string | null
+          user_id?: string | null
+          username: string
+        }
+        Update: {
+          admin_role?: string | null
+          created_at?: string
+          failure_reason?:
+            | Database["public"]["Enums"]["login_failure_reason"]
+            | null
+          id?: string
+          ip_address?: unknown
+          logged_in_at?: string
+          logged_out_at?: string | null
+          session_id?: string | null
+          status?: Database["public"]["Enums"]["login_status"]
+          user_agent?: string | null
+          user_id?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
       ads_categories: {
         Row: {
           active: boolean
@@ -1473,6 +1524,16 @@ export type Database = {
         | "phone"
         | "url"
       lock_flag: "locked" | "unlocked"
+      login_failure_reason:
+        | "invalid_username"
+        | "invalid_password"
+        | "invalid_2fa"
+        | "invalid_ip"
+        | "account_disabled"
+        | "account_locked"
+        | "too_many_attempts"
+        | "unknown_error"
+      login_status: "success" | "failed"
       mail_campaign_status:
         | "draft"
         | "scheduled"
@@ -1646,6 +1707,17 @@ export const Constants = {
         "url",
       ],
       lock_flag: ["locked", "unlocked"],
+      login_failure_reason: [
+        "invalid_username",
+        "invalid_password",
+        "invalid_2fa",
+        "invalid_ip",
+        "account_disabled",
+        "account_locked",
+        "too_many_attempts",
+        "unknown_error",
+      ],
+      login_status: ["success", "failed"],
       mail_campaign_status: [
         "draft",
         "scheduled",
