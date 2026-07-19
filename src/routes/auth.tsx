@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import { checkClientIp } from "@/lib/ip-check.functions";
+import { recordLoginAttempt } from "@/lib/login-log.functions";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -87,6 +88,9 @@ function AuthPage() {
       const ipCheck = await checkClientIp({ data: { email } });
       setClientIp(ipCheck.ip);
       if (!ipCheck.allowed) {
+        await recordLoginAttempt({
+          data: { email, success: false, failure_reason: "invalid_ip" },
+        }).catch(() => undefined);
         throw new Error(
           ipCheck.ip
             ? `Invalid IP: ${ipCheck.ip} is not whitelisted for backend access.`
@@ -94,7 +98,22 @@ function AuthPage() {
         );
       }
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      if (error) {
+        const msg = (error.message || "").toLowerCase();
+        const reason = msg.includes("invalid login")
+          ? "invalid_password"
+          : msg.includes("disabled")
+            ? "account_disabled"
+            : msg.includes("locked")
+              ? "account_locked"
+              : msg.includes("rate")
+                ? "too_many_attempts"
+                : "invalid_password";
+        await recordLoginAttempt({
+          data: { email, success: false, failure_reason: reason },
+        }).catch(() => undefined);
+        throw error;
+      }
       await startTotpForSession();
     } catch (e2) {
       setErr(e2 instanceof Error ? e2.message : String(e2));
@@ -114,7 +133,17 @@ function AuthPage() {
         challengeId,
         code: code.trim(),
       });
-      if (error) throw error;
+      if (error) {
+        await recordLoginAttempt({
+          data: { email, success: false, failure_reason: "invalid_2fa" },
+        }).catch(() => undefined);
+        throw error;
+      }
+      const sid = crypto.randomUUID();
+      const { id } = await recordLoginAttempt({
+        data: { email, success: true, session_id: sid },
+      });
+      if (id) localStorage.setItem("admin_login_log_id", id);
       navigate({ to: "/admin" });
     } catch (e2) {
       setErr(e2 instanceof Error ? e2.message : String(e2));
@@ -136,7 +165,17 @@ function AuthPage() {
         challengeId: ch.id,
         code: code.trim(),
       });
-      if (error) throw error;
+      if (error) {
+        await recordLoginAttempt({
+          data: { email, success: false, failure_reason: "invalid_2fa" },
+        }).catch(() => undefined);
+        throw error;
+      }
+      const sid = crypto.randomUUID();
+      const { id } = await recordLoginAttempt({
+        data: { email, success: true, session_id: sid },
+      });
+      if (id) localStorage.setItem("admin_login_log_id", id);
       navigate({ to: "/admin" });
     } catch (e2) {
       setErr(e2 instanceof Error ? e2.message : String(e2));

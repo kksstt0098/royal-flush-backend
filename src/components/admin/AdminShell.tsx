@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/use-auth";
+import { signOutAndLog } from "@/lib/logout";
 import {
   useMyanmarClock,
   usePendingCounts,
@@ -217,7 +218,7 @@ export function AdminShell({
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await signOutAndLog();
     navigate({ to: "/auth" });
   };
 

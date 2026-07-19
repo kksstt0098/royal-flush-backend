@@ -22,11 +22,12 @@ import {
   RoleMgmtPage,
   PermissionMgmtPage,
   AdminLogsPage,
-  LoginLogPage,
 } from "@/components/admin/SystemPages";
+import { LoginLogPage } from "@/components/admin/LoginLogPage";
 import { WhitelistPage } from "@/components/admin/WhitelistPage";
 import { useSession, useRoles, isStaff } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutAndLog } from "@/lib/logout";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
@@ -85,7 +86,7 @@ function AdminPage() {
             </button>
             <button
               onClick={async () => {
-                await supabase.auth.signOut();
+                await signOutAndLog();
                 navigate({ to: "/auth" });
               }}
               className="h-9 rounded-sm border border-input bg-background text-sm hover:bg-accent"
