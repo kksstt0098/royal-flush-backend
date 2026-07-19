@@ -22,8 +22,8 @@ import {
   RoleMgmtPage,
   PermissionMgmtPage,
   AdminLogsPage,
-  LoginLogPage,
 } from "@/components/admin/SystemPages";
+import { LoginLogPage } from "@/components/admin/LoginLogPage";
 import { WhitelistPage } from "@/components/admin/WhitelistPage";
 import { useSession, useRoles, isStaff } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
