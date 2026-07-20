@@ -62,7 +62,8 @@ export type PageKey =
   | "permissionMgmt"
   | "adminLogs"
   | "whitelist"
-  | "loginLog";
+  | "loginLog"
+  | "adminUser";
 
 type NavItem = { key: keyof typeof dict; page?: PageKey };
 type NavGroup = {
@@ -148,6 +149,7 @@ const groups: NavGroup[] = [
     label: "system",
     icon: Settings,
     children: [
+      { key: "adminUser", page: "adminUser" },
       { key: "roleMgmt", page: "roleMgmt" },
       { key: "permissionMgmt", page: "permissionMgmt" },
       { key: "adminLogs", page: "adminLogs" },

@@ -25,6 +25,7 @@ import {
 } from "@/components/admin/SystemPages";
 import { LoginLogPage } from "@/components/admin/LoginLogPage";
 import { WhitelistPage } from "@/components/admin/WhitelistPage";
+import { AdminUserPage } from "@/components/admin/AdminUserPage";
 import { useSession, useRoles, isStaff } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { signOutAndLog } from "@/lib/logout";
@@ -147,6 +148,8 @@ function AdminPage() {
           <WhitelistPage />
         ) : active === "loginLog" ? (
           <LoginLogPage />
+        ) : active === "adminUser" ? (
+          <AdminUserPage />
         ) : (
           <WithdrawalPaymentPage />
         )}

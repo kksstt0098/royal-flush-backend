@@ -166,6 +166,7 @@ export const dict: Dict = {
   levelConfigGroup: { en: "Level Config", my: "အဆင့် Config" },
   levelConfig: { en: "Level config", my: "အဆင့် config" },
   system: { en: "System", my: "စနစ်" },
+  adminUser: { en: "Admin User", my: "အက်ဒမင်အသုံးပြုသူ" },
   roleMgmt: { en: "Role", my: "အခန်းကဏ္ဍ" },
   permissionMgmt: { en: "Permission", my: "ခွင့်ပြုချက်" },
   adminLogs: { en: "Admin Logs", my: "အက်ဒမင်မှတ်တမ်း" },
