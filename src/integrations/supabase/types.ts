@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_activity_logs: {
+        Row: {
+          action: string
+          actor: string | null
+          actor_name: string
+          created_at: string
+          id: string
+          meta: Json
+          target_id: string | null
+          target_name: string | null
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          actor_name?: string
+          created_at?: string
+          id?: string
+          meta?: Json
+          target_id?: string | null
+          target_name?: string | null
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          actor_name?: string
+          created_at?: string
+          id?: string
+          meta?: Json
+          target_id?: string | null
+          target_name?: string | null
+        }
+        Relationships: []
+      }
       admin_login_logs: {
         Row: {
           admin_role: string | null
@@ -62,6 +95,60 @@ export type Database = {
           user_agent?: string | null
           user_id?: string | null
           username?: string
+        }
+        Relationships: []
+      }
+      admin_meta: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          created_by_name: string
+          deleted_at: string | null
+          deleted_by: string | null
+          deleted_by_name: string | null
+          deleted_reason: string | null
+          disable_reason: string | null
+          freeze_reason: string | null
+          full_name: string
+          id: string
+          status: Database["public"]["Enums"]["admin_user_status"]
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deleted_by_name?: string | null
+          deleted_reason?: string | null
+          disable_reason?: string | null
+          freeze_reason?: string | null
+          full_name?: string
+          id: string
+          status?: Database["public"]["Enums"]["admin_user_status"]
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deleted_by_name?: string | null
+          deleted_reason?: string | null
+          disable_reason?: string | null
+          freeze_reason?: string | null
+          full_name?: string
+          id?: string
+          status?: Database["public"]["Enums"]["admin_user_status"]
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
         }
         Relationships: []
       }
@@ -1510,6 +1597,7 @@ export type Database = {
       staff_display_name: { Args: { _uid: string }; Returns: string }
     }
     Enums: {
+      admin_user_status: "offline" | "online" | "frozen" | "disabled"
       app_role: "admin" | "auditor" | "payer" | "player"
       cs_audience: "all" | "players" | "staff"
       cs_channel_type:
@@ -1692,6 +1780,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_user_status: ["offline", "online", "frozen", "disabled"],
       app_role: ["admin", "auditor", "payer", "player"],
       cs_audience: ["all", "players", "staff"],
       cs_channel_type: [
