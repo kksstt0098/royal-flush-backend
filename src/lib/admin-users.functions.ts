@@ -105,22 +105,22 @@ export const listAdminUsers = createServerFn({ method: "POST" })
     // Active sessions (online)
     const { data: activeLogs } = await supabaseAdmin
       .from("admin_login_logs")
-      .select("user_id, login_time")
+      .select("user_id, logged_in_at")
       .eq("status", "success")
       .is("logged_out_at", null)
-      .gte("login_time", new Date(Date.now() - 24 * 3600 * 1000).toISOString());
+      .gte("logged_in_at", new Date(Date.now() - 24 * 3600 * 1000).toISOString());
     const online = new Set((activeLogs ?? []).map((r) => r.user_id).filter(Boolean));
 
     // Last login per user
     const { data: lastLogins } = await supabaseAdmin
       .from("admin_login_logs")
-      .select("user_id, login_time")
+      .select("user_id, logged_in_at")
       .eq("status", "success")
-      .order("login_time", { ascending: false })
+      .order("logged_in_at", { ascending: false })
       .limit(500);
     const lastLoginMap = new Map<string, string>();
     for (const l of lastLogins ?? []) {
-      if (l.user_id && !lastLoginMap.has(l.user_id)) lastLoginMap.set(l.user_id, l.login_time);
+      if (l.user_id && !lastLoginMap.has(l.user_id)) lastLoginMap.set(l.user_id, l.logged_in_at);
     }
 
     const superId = await superAdminId(supabaseAdmin);
@@ -371,7 +371,7 @@ export const setAdminStatus = createServerFn({ method: "POST" })
     } as any);
     if (error) throw new Error(error.message);
 
-    await supabaseAdmin.from("admin_meta").update(patch).eq("id", data.id);
+    await supabaseAdmin.from("admin_meta").update(patch as any).eq("id", data.id);
     if (newStatus !== "offline" || data.action === "unfreeze" || data.action === "enable") {
       // kick sessions on any state transition to be safe
       await supabaseAdmin.auth.admin.signOut(data.id, "global");
