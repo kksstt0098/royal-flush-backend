@@ -351,7 +351,7 @@ export function AdminUserPage() {
               await runAction(() => kick({ data: { id: confirmFor.row.id } }), "Sessions terminated");
             } else {
               await runAction(
-                () => setStatus({ data: { id: confirmFor.row.id, action: confirmFor.action } }),
+                () => setStatus({ data: { id: confirmFor.row.id, action: confirmFor.action as "unfreeze" | "enable" } }),
                 confirmFor.action === "unfreeze" ? "Admin unfrozen" : "Admin enabled",
               );
             }
