@@ -39,6 +39,8 @@ import {
   ShieldCheck,
   Layers,
   Settings,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 
 export type PageKey =
@@ -175,6 +177,15 @@ export function AdminShell({
   const { t, lang, setLang } = useT();
   const [open, setOpen] = useState<Record<string, boolean>>({ player: true, cash: true, levelConfig: true });
   const toggle = (k: string) => setOpen((o) => ({ ...o, [k]: !o[k] }));
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("admin.sidebar.collapsed") === "1";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("admin.sidebar.collapsed", collapsed ? "1" : "0");
+    }
+  }, [collapsed]);
   const navigate = useNavigate();
   const { user } = useSession();
   const [nick, setNick] = useState<string>("");
@@ -235,11 +246,23 @@ export function AdminShell({
   const groupLabel = activeGroup ? t(activeGroup.label) : "";
 
   return (
-    <div className="min-h-screen flex bg-background text-foreground text-sm">
+    <div className="h-screen flex bg-background text-foreground text-sm overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-56 shrink-0 bg-[oklch(0.25_0.03_260)] text-white/90 flex flex-col">
-        <div className="h-11 flex items-center px-4 text-[13px] font-medium border-b border-white/10">
-          Casino Admin
+      <aside
+        className={
+          "shrink-0 bg-[oklch(0.25_0.03_260)] text-white/90 flex flex-col h-screen sticky top-0 transition-[width] duration-200 " +
+          (collapsed ? "w-14" : "w-56")
+        }
+      >
+        <div className="h-11 flex items-center px-3 text-[13px] font-medium border-b border-white/10 justify-between">
+          {!collapsed && <span className="truncate">Casino Admin</span>}
+          <button
+            onClick={() => setCollapsed((v) => !v)}
+            className="p-1 rounded hover:bg-white/10 text-white/70"
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <ChevronsRight className="w-4 h-4" /> : <ChevronsLeft className="w-4 h-4" />}
+          </button>
         </div>
         <nav className="flex-1 overflow-y-auto py-2 text-[13px]">
           {groups.map((g) => {
@@ -247,31 +270,44 @@ export function AdminShell({
             const hasChildren = !!g.children;
             const isOpen = open[g.key];
             const isLeafActive = g.page && g.page === activePage;
+            const groupActive = isLeafActive || g.children?.some((c) => c.page === activePage);
             return (
               <div key={g.key}>
                 <button
                   onClick={() => {
+                    if (collapsed) {
+                      setCollapsed(false);
+                      if (hasChildren) setOpen((o) => ({ ...o, [g.key]: true }));
+                      else if (g.page) onNavigate(g.page);
+                      return;
+                    }
                     if (hasChildren) toggle(g.key);
                     else if (g.page) onNavigate(g.page);
                   }}
+                  title={collapsed ? t(g.label) : undefined}
                   className={
-                    "w-full flex items-center gap-2 px-4 h-9 hover:bg-white/5 " +
-                    (isLeafActive
+                    "w-full flex items-center gap-2 h-9 hover:bg-white/5 " +
+                    (collapsed ? "px-0 justify-center " : "px-4 ") +
+                    (groupActive
                       ? "bg-[oklch(0.6_0.18_250)]/15 text-[oklch(0.75_0.18_250)]"
                       : "text-white/80")
                   }
                 >
                   <Icon className="w-4 h-4" />
-                  <span className="flex-1 text-left">{t(g.label)}</span>
-                  {hasChildren && (
-                    <ChevronRight
-                      className={
-                        "w-3.5 h-3.5 transition-transform " + (isOpen ? "rotate-90" : "")
-                      }
-                    />
+                  {!collapsed && (
+                    <>
+                      <span className="flex-1 text-left">{t(g.label)}</span>
+                      {hasChildren && (
+                        <ChevronRight
+                          className={
+                            "w-3.5 h-3.5 transition-transform " + (isOpen ? "rotate-90" : "")
+                          }
+                        />
+                      )}
+                    </>
                   )}
                 </button>
-                {hasChildren && isOpen && (
+                {hasChildren && isOpen && !collapsed && (
                   <div className="pb-1">
                     {g.children!.length === 0 ? (
                       <div className="pl-11 py-1 text-[12px] text-white/40">—</div>
@@ -302,11 +338,17 @@ export function AdminShell({
         </nav>
       </aside>
 
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col h-screen overflow-hidden">
       {/* Top bar */}
-      <header className="flex items-center justify-between border-b border-panel-border bg-panel px-4 h-11">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-panel-border bg-panel px-4 h-11 shrink-0">
         <div className="flex items-center gap-4">
-          <Menu className="w-4 h-4 text-muted-foreground" />
+          <button
+            onClick={() => setCollapsed((v) => !v)}
+            className="text-muted-foreground hover:text-foreground"
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <Menu className="w-4 h-4" />
+          </button>
           <nav className="flex items-center gap-1 text-[13px]">
             <span className="text-foreground/80">{t("home")}</span>
             <span className="text-muted-foreground">/</span>
@@ -440,7 +482,7 @@ export function AdminShell({
       </header>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-panel-border bg-panel px-4 h-9">
+      <div className="sticky top-11 z-20 flex items-center gap-1 border-b border-panel-border bg-panel px-4 h-9 shrink-0 overflow-x-auto">
         {openTabs.map((tab) => {
           const active = tab === activePage;
           return (
@@ -468,7 +510,7 @@ export function AdminShell({
         })}
       </div>
 
-      <main className="p-3">{children}</main>
+      <main className="p-3 flex-1 overflow-auto">{children}</main>
       </div>
       {exportOpen && (
         <ExportDialog email={email} onClose={() => setExportOpen(false)} />
