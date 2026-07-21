@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { checkClientIp } from "@/lib/ip-check.functions";
 import { signOutAndLog } from "@/lib/logout";
+import { useSessionGuard } from "@/hooks/use-session-guard";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -17,5 +18,10 @@ export const Route = createFileRoute("/_authenticated")({
     }
     return { user: data.user };
   },
-  component: () => <Outlet />,
+  component: AuthenticatedShell,
 });
+
+function AuthenticatedShell() {
+  useSessionGuard();
+  return <Outlet />;
+}
