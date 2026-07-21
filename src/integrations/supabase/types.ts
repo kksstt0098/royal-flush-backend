@@ -100,6 +100,7 @@ export type Database = {
       }
       admin_meta: {
         Row: {
+          active_session_id: string | null
           created_at: string
           created_by: string | null
           created_by_name: string
@@ -117,6 +118,7 @@ export type Database = {
           updated_by_name: string
         }
         Insert: {
+          active_session_id?: string | null
           created_at?: string
           created_by?: string | null
           created_by_name?: string
@@ -134,6 +136,7 @@ export type Database = {
           updated_by_name?: string
         }
         Update: {
+          active_session_id?: string | null
           created_at?: string
           created_by?: string | null
           created_by_name?: string
@@ -1499,6 +1502,7 @@ export type Database = {
         Args: { _id: string; _remark: string }
         Returns: undefined
       }
+      claim_admin_session: { Args: { _session_id: string }; Returns: undefined }
       claim_first_admin: { Args: never; Returns: boolean }
       create_withdrawal: {
         Args: { _account_no: string; _amount: number; _payout_mode: string }
@@ -1516,6 +1520,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_active_admin_session: {
+        Args: { _session_id: string }
         Returns: boolean
       }
       is_ip_allowed: { Args: { _ip: unknown }; Returns: boolean }
