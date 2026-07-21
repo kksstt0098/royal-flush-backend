@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.log_ip_attempt(inet, text, boolean, text) FROM anon, PUBLIC;
