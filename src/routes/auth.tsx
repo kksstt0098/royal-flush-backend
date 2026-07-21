@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import { checkClientIp } from "@/lib/ip-check.functions";
 import { recordLoginAttempt } from "@/lib/login-log.functions";
+import { claimActiveSession } from "@/lib/session.functions";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    kicked: s.kicked === "1" || s.kicked === 1 ? "1" : undefined,
+  }),
   component: AuthPage,
 });
 
@@ -13,12 +17,17 @@ type Stage = "password" | "totp" | "enroll";
 
 function AuthPage() {
   const navigate = useNavigate();
+  const search = useSearch({ from: "/auth" }) as { kicked?: string };
   const [stage, setStage] = useState<Stage>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(
+    search.kicked === "1"
+      ? "Your admin account has been logged in from another browser or device. This session has been automatically logged out."
+      : null,
+  );
   const [clientIp, setClientIp] = useState<string | null>(null);
 
   const [factorId, setFactorId] = useState<string | null>(null);
@@ -144,6 +153,8 @@ function AuthPage() {
         data: { email, success: true, session_id: sid },
       });
       if (id) localStorage.setItem("admin_login_log_id", id);
+      // Enforce single active session: mark this session and revoke others.
+      await claimActiveSession().catch(() => undefined);
       navigate({ to: "/admin" });
     } catch (e2) {
       setErr(e2 instanceof Error ? e2.message : String(e2));
@@ -176,6 +187,7 @@ function AuthPage() {
         data: { email, success: true, session_id: sid },
       });
       if (id) localStorage.setItem("admin_login_log_id", id);
+      await claimActiveSession().catch(() => undefined);
       navigate({ to: "/admin" });
     } catch (e2) {
       setErr(e2 instanceof Error ? e2.message : String(e2));
