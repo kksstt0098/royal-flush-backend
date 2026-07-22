@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { LangProvider } from "@/lib/i18n";
 import { AdminShell, type PageKey } from "@/components/admin/AdminShell";
+import { DashboardPage } from "@/components/admin/DashboardPage";
 import { PlayerQueryPage } from "@/components/admin/PlayerQueryPage";
 import { WithdrawalOrderPage } from "@/components/admin/WithdrawalOrderPage";
 import { ReviewWithdrawalPage } from "@/components/admin/ReviewWithdrawalPage";
@@ -39,8 +40,8 @@ function AdminPage() {
   const { roles, loading, refetch } = useRoles(user?.id);
   const navigate = useNavigate();
 
-  const [active, setActive] = useState<PageKey>("playerQuery");
-  const [tabs, setTabs] = useState<PageKey[]>(["playerQuery"]);
+  const [active, setActive] = useState<PageKey>("dashboard");
+  const [tabs, setTabs] = useState<PageKey[]>(["dashboard"]);
   const navigateTo = (p: PageKey) => {
     setActive(p);
     setTabs((ts) => (ts.includes(p) ? ts : [...ts, p]));
@@ -108,7 +109,9 @@ function AdminPage() {
         openTabs={tabs}
         onCloseTab={closeTab}
       >
-        {active === "playerQuery" ? (
+        {active === "dashboard" ? (
+          <DashboardPage onNavigate={(p) => navigateTo(p as PageKey)} />
+        ) : active === "playerQuery" ? (
           <PlayerQueryPage />
         ) : active === "withdrawalOrder" ? (
           <WithdrawalOrderPage />
