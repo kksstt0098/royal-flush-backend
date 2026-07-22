@@ -98,6 +98,7 @@ export const dict: Dict = {
   active: { en: "Active", my: "ဖွင့်ထား" },
   disabled: { en: "Disabled", my: "ပိတ်ထား" },
   dataOverview: { en: "Data Overview", my: "ဒေတာအနှစ်ချုပ်" },
+  dashboard: { en: "Dashboard", my: "ဒက်ရှ်ဘုတ်" },
   onlinePlayers: { en: "Online Players", my: "အွန်လိုင်းကစားသမား" },
   gameRecords: { en: "Game Records", my: "ဂိမ်းမှတ်တမ်း" },
   entryExitRecords: { en: "Entry/Exit Records", my: "ဝင်/ထွက်မှတ်တမ်း" },

@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 
 export type PageKey =
+  | "dashboard"
   | "playerQuery"
   | "withdrawalOrder"
   | "reviewWithdrawal"
@@ -77,7 +78,7 @@ type NavGroup = {
 };
 
 const groups: NavGroup[] = [
-  { key: "overview", label: "dataOverview", icon: LayoutDashboard },
+  { key: "overview", label: "dataOverview", icon: LayoutDashboard, page: "dashboard" },
   {
     key: "player",
     label: "player",
