@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const RangeSchema = z.enum([
   "today",
@@ -116,10 +117,13 @@ function pctDelta(curr: number, prev: number): number | null {
 }
 
 export const getDashboardStats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: { range?: DashboardRange } | undefined) => ({
     range: RangeSchema.parse(input?.range ?? "today"),
   }))
-  .handler(async ({ data }): Promise<DashboardStats> => {
+  .handler(async ({ data, context }): Promise<DashboardStats> => {
+    const { data: isStaff } = await context.supabase.rpc("is_staff", { _user_id: context.userId });
+    if (!isStaff) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { start, end, prevStart, prevEnd } = windowFor(data.range);
     const iso = (d: Date) => d.toISOString();
