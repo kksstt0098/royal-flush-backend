@@ -1,4 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Users, UserPlus, Share2, Wallet, Crown,
   ArrowDownToLine, ArrowUpFromLine, TrendingUp, Banknote, PiggyBank,
@@ -8,8 +10,9 @@ import {
   Clock3, CreditCard, ServerCog, RefreshCw, Bell,
   type LucideIcon,
 } from "lucide-react";
+import { getDashboardStats, type DashboardRange, type DashboardStats } from "@/lib/dashboard.functions";
 
-type Range = "today" | "yesterday" | "thisWeek" | "lastWeek" | "thisMonth" | "lastMonth" | "last7" | "last30" | "last90" | "custom";
+type Range = DashboardRange;
 
 const RANGES: { key: Range; label: string }[] = [
   { key: "today", label: "Today" },
@@ -21,7 +24,6 @@ const RANGES: { key: Range; label: string }[] = [
   { key: "last7", label: "Last 7 Days" },
   { key: "last30", label: "Last 30 Days" },
   { key: "last90", label: "Last 90 Days" },
-  { key: "custom", label: "Custom Range" },
 ];
 
 type Tone = "indigo" | "emerald" | "amber" | "rose" | "sky" | "violet" | "slate";
@@ -36,11 +38,26 @@ const TONE: Record<Tone, { bg: string; text: string; ring: string; bar: string }
   slate:   { bg: "bg-slate-500/10",   text: "text-slate-500",   ring: "ring-slate-500/20",   bar: "bg-slate-500" },
 };
 
-function fmtNum(n: number) {
+function fmtNum(n: number | null | undefined) {
+  if (n === null || n === undefined) return "—";
   return n.toLocaleString("en-US");
 }
-function fmtMoney(n: number) {
+function fmtMoney(n: number | null | undefined) {
+  if (n === null || n === undefined) return "—";
   return "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+}
+function fmtPct(n: number | null | undefined, digits = 2) {
+  if (n === null || n === undefined || Number.isNaN(n)) return "—";
+  return n.toFixed(digits) + "%";
+}
+function fmtTime(iso: string | null | undefined) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  const diff = Date.now() - d.getTime();
+  if (diff < 60_000) return "just now";
+  if (diff < 3_600_000) return Math.floor(diff / 60_000) + "m ago";
+  if (diff < 86_400_000) return Math.floor(diff / 3_600_000) + "h ago";
+  return Math.floor(diff / 86_400_000) + "d ago";
 }
 
 type KPI = {
@@ -59,23 +76,24 @@ function KpiCard({ k }: { k: KPI }) {
   return (
     <button
       onClick={k.onClick}
-      className="group text-left bg-panel border border-panel-border rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all relative overflow-hidden"
+      disabled={!k.onClick}
+      className="group text-left bg-panel border border-panel-border rounded-lg p-4 hover:border-primary/50 hover:shadow-lg hover:-translate-y-0.5 disabled:hover:translate-y-0 disabled:hover:shadow-none transition-all relative overflow-hidden"
     >
-      <div className={`absolute top-0 left-0 h-full w-1 ${t.bar} opacity-70 group-hover:opacity-100`} />
+      <div className={`absolute top-0 left-0 h-full w-[3px] ${t.bar} opacity-60 group-hover:opacity-100`} />
       <div className="flex items-start justify-between">
         <div className="min-w-0">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{k.title}</div>
-          <div className="mt-1.5 text-2xl font-semibold tabular-nums truncate">{k.value}</div>
+          <div className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{k.title}</div>
+          <div className="mt-2 text-[22px] leading-tight font-semibold tabular-nums truncate">{k.value}</div>
           {k.hint && <div className="text-[11px] text-muted-foreground mt-0.5">{k.hint}</div>}
         </div>
-        <div className={`shrink-0 w-9 h-9 rounded-md grid place-items-center ${t.bg} ${t.text} ring-1 ${t.ring}`}>
+        <div className={`shrink-0 w-9 h-9 rounded-lg grid place-items-center ${t.bg} ${t.text} ring-1 ${t.ring}`}>
           <Icon className="w-4 h-4" />
         </div>
       </div>
       {k.delta && (
-        <div className="mt-3 flex items-center gap-1 text-[11px]">
-          <span className={k.delta.up ? "text-emerald-500" : "text-rose-500"}>
-            {k.delta.up ? "▲" : "▼"} {k.delta.pct.toFixed(1)}%
+        <div className="mt-3 flex items-center gap-1.5 text-[11px]">
+          <span className={`inline-flex items-center gap-0.5 px-1.5 h-4 rounded ${k.delta.up ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"}`}>
+            {k.delta.up ? "▲" : "▼"} {Math.abs(k.delta.pct).toFixed(1)}%
           </span>
           <span className="text-muted-foreground">vs previous</span>
         </div>
@@ -120,84 +138,65 @@ function TableCard({ title, subtitle, children, onOpen }: { title: string; subti
 
 export function DashboardPage({ onNavigate }: { onNavigate?: (p: string) => void } = {}) {
   const [range, setRange] = useState<Range>("today");
-  const [lastUpdated, setLastUpdated] = useState<string>(() => new Date().toISOString().slice(0, 19).replace("T", " "));
-  const [refreshing, setRefreshing] = useState(false);
-  const [notifCount] = useState<number>(3);
-
-  const refresh = () => {
-    setRefreshing(true);
-    setTimeout(() => {
-      setLastUpdated(new Date().toISOString().slice(0, 19).replace("T", " "));
-      setRefreshing(false);
-    }, 500);
-  };
-
+  const fetchStats = useServerFn(getDashboardStats);
+  const q = useQuery<DashboardStats>({
+    queryKey: ["dashboard-stats", range],
+    queryFn: () => fetchStats({ data: { range } }),
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+  });
+  const s = q.data;
+  const lastUpdated = q.dataUpdatedAt ? new Date(q.dataUpdatedAt) : null;
   const go = (p: string) => onNavigate?.(p);
 
+  const delta = (v: number | null | undefined): KPI["delta"] => {
+    if (v === null || v === undefined || Number.isNaN(v)) return undefined;
+    return { pct: v, up: v >= 0 };
+  };
+
   const players: KPI[] = useMemo(() => [
-    { title: "Total Players", value: fmtNum(152320), icon: Users, tone: "indigo", delta: { pct: 2.4, up: true }, onClick: () => go("playerQuery") },
-    { title: "New Register", value: fmtNum(286), icon: UserPlus, tone: "emerald", delta: { pct: 8.1, up: true }, onClick: () => go("playerQuery") },
-    { title: "Referral Register", value: fmtNum(61), icon: Share2, tone: "sky", delta: { pct: 1.2, up: false }, onClick: () => go("playerQuery") },
-    { title: "First Deposit Players", value: fmtNum(142), icon: Wallet, tone: "amber", delta: { pct: 4.7, up: true }, onClick: () => go("onlineRecharge") },
-    { title: "VIP Players", value: fmtNum(925), icon: Crown, tone: "violet", delta: { pct: 0.6, up: true }, onClick: () => go("vipConfig") },
-  ], []);
+    { title: "Total Players", value: fmtNum(s?.players.total ?? 0), icon: Users, tone: "indigo", onClick: () => go("playerQuery") },
+    { title: "New Register", value: fmtNum(s?.players.newRegister ?? 0), icon: UserPlus, tone: "emerald", delta: delta(s?.deltas.newRegister), onClick: () => go("playerQuery") },
+    { title: "Referral Register", value: fmtNum(s?.players.referralRegister ?? 0), icon: Share2, tone: "sky", onClick: () => go("playerQuery") },
+    { title: "First Deposit Players", value: fmtNum(s?.players.firstDeposit ?? 0), icon: Wallet, tone: "amber", onClick: () => go("onlineRecharge") },
+    { title: "VIP Players", value: fmtNum(s?.players.vip ?? 0), icon: Crown, tone: "violet", onClick: () => go("vipConfig") },
+  ], [s]);
 
   const financial: KPI[] = useMemo(() => [
-    { title: "Total Deposit", value: fmtMoney(286500), icon: ArrowDownToLine, tone: "emerald", delta: { pct: 5.9, up: true }, onClick: () => go("onlineRecharge") },
-    { title: "Total Withdrawal", value: fmtMoney(221300), icon: ArrowUpFromLine, tone: "rose", delta: { pct: 3.2, up: true }, onClick: () => go("withdrawalOrder") },
-    { title: "Net Deposit", value: fmtMoney(65200), icon: TrendingUp, tone: "indigo", delta: { pct: 12.4, up: true }, onClick: () => go("onlineRecharge") },
-    { title: "Company Profit", value: fmtMoney(720000), icon: Banknote, tone: "amber", delta: { pct: 7.3, up: true } },
-    { title: "Player Wallet Total", value: fmtMoney(5826300), icon: PiggyBank, tone: "sky", hint: "Sum of active wallets" },
-  ], []);
+    { title: "Total Deposit", value: fmtMoney(s?.financial.totalDeposit ?? 0), icon: ArrowDownToLine, tone: "emerald", delta: delta(s?.deltas.totalDeposit), onClick: () => go("onlineRecharge") },
+    { title: "Total Withdrawal", value: fmtMoney(s?.financial.totalWithdrawal ?? 0), icon: ArrowUpFromLine, tone: "rose", delta: delta(s?.deltas.totalWithdrawal), onClick: () => go("withdrawalOrder") },
+    { title: "Net Deposit", value: fmtMoney(s?.financial.netDeposit ?? 0), icon: TrendingUp, tone: "indigo", onClick: () => go("onlineRecharge") },
+    { title: "Company Profit", value: fmtMoney(s?.gaming.ggr ?? 0), icon: Banknote, tone: "amber", hint: "GGR = Bet − Payout" },
+    { title: "Player Wallet Total", value: fmtMoney(s?.financial.walletTotal ?? 0), icon: PiggyBank, tone: "sky", hint: "Sum of active wallets" },
+  ], [s]);
 
   const gaming: KPI[] = useMemo(() => [
-    { title: "Total Betting", value: fmtMoney(9500000), icon: Dice5, tone: "indigo", delta: { pct: 6.1, up: true } },
-    { title: "Total Payout", value: fmtMoney(8780000), icon: Coins, tone: "sky", delta: { pct: 5.4, up: true } },
-    { title: "Total Player Win", value: fmtMoney(8780000), icon: Trophy, tone: "emerald" },
-    { title: "House Win", value: fmtMoney(720000), icon: Target, tone: "amber", delta: { pct: 2.9, up: true } },
-    { title: "GGR", value: fmtMoney(720000), icon: Banknote, tone: "violet", delta: { pct: 3.1, up: true } },
-    { title: "RTP", value: "96.18%", icon: Percent, tone: "slate", hint: "Rolling 24h" },
-  ], []);
+    { title: "Total Betting", value: fmtMoney(s?.gaming.totalBet ?? 0), icon: Dice5, tone: "indigo", delta: delta(s?.deltas.totalBet) },
+    { title: "Total Payout", value: fmtMoney(s?.gaming.totalPayout ?? 0), icon: Coins, tone: "sky" },
+    { title: "Total Player Win", value: fmtMoney(s?.gaming.playerWin ?? 0), icon: Trophy, tone: "emerald" },
+    { title: "House Win", value: fmtMoney(s?.gaming.houseWin ?? 0), icon: Target, tone: "amber" },
+    { title: "GGR", value: fmtMoney(s?.gaming.ggr ?? 0), icon: Banknote, tone: "violet" },
+    { title: "RTP", value: fmtPct(s?.gaming.rtp), icon: Percent, tone: "slate", hint: "Payout ÷ Bet" },
+  ], [s]);
 
   const bonus: KPI[] = useMemo(() => [
-    { title: "Total Bonus Given", value: fmtMoney(13280), icon: Gift, tone: "violet" },
-    { title: "First Deposit Bonus", value: fmtMoney(5500), icon: Sparkles, tone: "emerald" },
-    { title: "Cashback Bonus", value: fmtMoney(3200), icon: RotateCcw, tone: "sky" },
-    { title: "Referral Bonus", value: fmtMoney(1500), icon: Handshake, tone: "amber" },
-    { title: "VIP Bonus", value: fmtMoney(2100), icon: Star, tone: "rose", onClick: () => go("vipConfig") },
-  ], []);
+    { title: "Total Bonus Given", value: fmtMoney(s?.bonus.totalBonus ?? 0), icon: Gift, tone: "violet" },
+    { title: "First Deposit Bonus", value: fmtMoney(0), icon: Sparkles, tone: "emerald", hint: "—" },
+    { title: "Cashback Bonus", value: fmtMoney(0), icon: RotateCcw, tone: "sky", hint: "—" },
+    { title: "Referral Bonus", value: fmtMoney(0), icon: Handshake, tone: "amber", hint: "—" },
+    { title: "VIP Bonus", value: fmtMoney(0), icon: Star, tone: "rose", hint: "—", onClick: () => go("vipConfig") },
+  ], [s]);
 
   const security: KPI[] = useMemo(() => [
-    { title: "Risk Alert", value: fmtNum(25), icon: ShieldAlert, tone: "rose" },
-    { title: "Fraud Players", value: fmtNum(8), icon: UserX, tone: "rose" },
-    { title: "Duplicate IP Detection", value: fmtNum(15), icon: Fingerprint, tone: "amber" },
-    { title: "Multi Account Detection", value: fmtNum(12), icon: Users2, tone: "amber" },
-    { title: "Suspicious Transaction", value: fmtNum(6), icon: AlertTriangle, tone: "amber" },
+    { title: "Risk Alert", value: fmtNum(0), icon: ShieldAlert, tone: "rose", hint: "—" },
+    { title: "Fraud Players", value: fmtNum(0), icon: UserX, tone: "rose", hint: "—" },
+    { title: "Duplicate IP Detection", value: fmtNum(0), icon: Fingerprint, tone: "amber", hint: "—" },
+    { title: "Multi Account Detection", value: fmtNum(0), icon: Users2, tone: "amber", hint: "—" },
+    { title: "Suspicious Transaction", value: fmtNum(0), icon: AlertTriangle, tone: "amber", hint: "—" },
   ], []);
 
-  const topWinners = [
-    { id: "1075612", user: "MgMg", game: "Baccarat", provider: "Evolution", win: 25800, time: "10:24" },
-    { id: "1075890", user: "AyeAye", game: "Roulette", provider: "Pragmatic", win: 18420, time: "10:12" },
-    { id: "1076001", user: "KoZaw", game: "Sweet Bonanza", provider: "Pragmatic", win: 12300, time: "09:58" },
-    { id: "1075559", user: "ThuThu", game: "Dragon Tiger", provider: "Evolution", win: 9800, time: "09:41" },
-    { id: "1077221", user: "NyiNyi", game: "Lightning Dice", provider: "Evolution", win: 7620, time: "09:20" },
-  ];
-
-  const topAgents = [
-    { name: "Agent001", players: 2580, turnover: 850000, commission: 35200 },
-    { name: "Agent007", players: 1980, turnover: 612000, commission: 24800 },
-    { name: "Agent042", players: 1420, turnover: 488000, commission: 19100 },
-    { name: "Agent108", players: 1105, turnover: 371000, commission: 14300 },
-    { name: "Agent231", players: 860, turnover: 258000, commission: 9800 },
-  ];
-
-  const topWallets = [
-    { user: "player777", vip: 10, bal: 125800, last: "Today" },
-    { user: "highroller", vip: 9, bal: 98200, last: "Today" },
-    { user: "goldking", vip: 8, bal: 76400, last: "Yesterday" },
-    { user: "aungaung", vip: 7, bal: 62150, last: "Today" },
-    { user: "mgmg88", vip: 7, bal: 54900, last: "2d ago" },
-  ];
+  const topWinners = s?.topWinners ?? [];
+  const topWallets = s?.topWallets ?? [];
 
   return (
     <div className="p-4 space-y-6 max-w-[1600px] mx-auto">
@@ -213,22 +212,19 @@ export function DashboardPage({ onNavigate }: { onNavigate?: (p: string) => void
           <div className="flex items-center gap-2">
             <div className="text-right">
               <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">Last update</div>
-              <div className="text-[12px] font-mono tabular-nums">{lastUpdated}</div>
+              <div className="text-[12px] font-mono tabular-nums">
+                {lastUpdated ? lastUpdated.toISOString().slice(0, 19).replace("T", " ") : "—"}
+              </div>
             </div>
             <button
-              onClick={refresh}
+              onClick={() => q.refetch()}
               className="h-9 px-3 rounded-md border border-input bg-background hover:bg-accent text-sm inline-flex items-center gap-2"
             >
-              <RefreshCw className={"w-3.5 h-3.5 " + (refreshing ? "animate-spin" : "")} />
+              <RefreshCw className={"w-3.5 h-3.5 " + (q.isFetching ? "animate-spin" : "")} />
               Refresh
             </button>
             <button className="h-9 w-9 rounded-md border border-input bg-background hover:bg-accent inline-flex items-center justify-center relative" title="Alerts">
               <Bell className="w-4 h-4" />
-              {notifCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] rounded-full min-w-[16px] h-4 px-1 grid place-items-center">
-                  {notifCount}
-                </span>
-              )}
             </button>
           </div>
         </div>
@@ -258,7 +254,7 @@ export function DashboardPage({ onNavigate }: { onNavigate?: (p: string) => void
           </div>
           <div className="flex-1">
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Pending Withdrawal</div>
-            <div className="text-xl font-semibold tabular-nums">12</div>
+            <div className="text-xl font-semibold tabular-nums">{fmtNum(s?.quick.pendingWithdrawal ?? 0)}</div>
           </div>
         </button>
         <button onClick={() => go("onlineRecharge")} className="bg-panel border border-panel-border rounded-lg p-4 flex items-center gap-3 hover:border-primary/50 text-left">
@@ -267,7 +263,7 @@ export function DashboardPage({ onNavigate }: { onNavigate?: (p: string) => void
           </div>
           <div className="flex-1">
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Pending Deposit</div>
-            <div className="text-xl font-semibold tabular-nums">6</div>
+            <div className="text-xl font-semibold tabular-nums">{fmtNum(s?.quick.pendingDeposit ?? 0)}</div>
           </div>
         </button>
         <div className="bg-panel border border-panel-border rounded-lg p-4 flex items-center gap-3">
@@ -277,12 +273,18 @@ export function DashboardPage({ onNavigate }: { onNavigate?: (p: string) => void
           <div className="flex-1">
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Server Status</div>
             <div className="text-xl font-semibold flex items-center gap-2">
-              Healthy
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              {q.isError ? "Degraded" : "Healthy"}
+              <span className={`inline-block w-2 h-2 rounded-full ${q.isError ? "bg-rose-500" : "bg-emerald-500"} animate-pulse`} />
             </div>
           </div>
         </div>
       </div>
+
+      {q.isError && (
+        <div className="bg-rose-500/10 border border-rose-500/30 rounded-lg p-3 text-[12px] text-rose-500">
+          Failed to load dashboard data. Try refreshing.
+        </div>
+      )}
 
       <Section title="Player Overview" subtitle="Registrations, activation and VIP membership">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
@@ -316,12 +318,14 @@ export function DashboardPage({ onNavigate }: { onNavigate?: (p: string) => void
                 <tr>
                   <th className="text-left font-medium px-3 py-2">Player</th>
                   <th className="text-left font-medium px-3 py-2">Game</th>
-                  <th className="text-left font-medium px-3 py-2">Provider</th>
                   <th className="text-right font-medium px-3 py-2">Win</th>
                   <th className="text-right font-medium px-3 py-2">Last</th>
                 </tr>
               </thead>
               <tbody>
+                {topWinners.length === 0 && (
+                  <tr><td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">No data</td></tr>
+                )}
                 {topWinners.map((r, i) => (
                   <tr key={r.id} className="border-t border-panel-border hover:bg-accent/50">
                     <td className="px-3 py-2">
@@ -334,7 +338,6 @@ export function DashboardPage({ onNavigate }: { onNavigate?: (p: string) => void
                       </div>
                     </td>
                     <td className="px-3 py-2">{r.game}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{r.provider}</td>
                     <td className="px-3 py-2 text-right font-semibold text-emerald-500 tabular-nums">+{fmtMoney(r.win)}</td>
                     <td className="px-3 py-2 text-right text-muted-foreground tabular-nums">{r.time}</td>
                   </tr>
@@ -354,19 +357,7 @@ export function DashboardPage({ onNavigate }: { onNavigate?: (p: string) => void
                 </tr>
               </thead>
               <tbody>
-                {topAgents.map((r, i) => (
-                  <tr key={r.name} className="border-t border-panel-border hover:bg-accent/50">
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <span className={"w-5 h-5 grid place-items-center rounded-full text-[10px] font-semibold " + (i < 3 ? "bg-violet-500/15 text-violet-600" : "bg-muted text-muted-foreground")}>{i + 1}</span>
-                        <span className="font-medium">{r.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">{fmtNum(r.players)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(r.turnover)}</td>
-                    <td className="px-3 py-2 text-right font-semibold text-emerald-500 tabular-nums">{fmtMoney(r.commission)}</td>
-                  </tr>
-                ))}
+                <tr><td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">No data</td></tr>
               </tbody>
             </table>
           </TableCard>
@@ -382,6 +373,9 @@ export function DashboardPage({ onNavigate }: { onNavigate?: (p: string) => void
                 </tr>
               </thead>
               <tbody>
+                {topWallets.length === 0 && (
+                  <tr><td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">No data</td></tr>
+                )}
                 {topWallets.map((r, i) => (
                   <tr key={r.user} className="border-t border-panel-border hover:bg-accent/50">
                     <td className="px-3 py-2">
@@ -395,8 +389,8 @@ export function DashboardPage({ onNavigate }: { onNavigate?: (p: string) => void
                         <Crown className="w-3 h-3" /> VIP {r.vip}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right font-semibold tabular-nums">{fmtMoney(r.bal)}</td>
-                    <td className="px-3 py-2 text-right text-muted-foreground">{r.last}</td>
+                    <td className="px-3 py-2 text-right font-semibold tabular-nums">{fmtMoney(r.balance)}</td>
+                    <td className="px-3 py-2 text-right text-muted-foreground">{fmtTime(r.last)}</td>
                   </tr>
                 ))}
               </tbody>
