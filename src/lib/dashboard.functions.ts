@@ -131,13 +131,20 @@ export const getDashboardStats = createServerFn({ method: "POST" })
       to: Date,
       status?: string,
     ) => {
-      let q = supabaseAdmin
-        .from(table)
-        .select(field, { head: false })
+      let q = (supabaseAdmin.from(table) as unknown as {
+        select: (s: string) => {
+          gte: (a: string, b: string) => {
+            lt: (a: string, b: string) => {
+              eq: (a: string, b: string) => Promise<{ data: Record<string, unknown>[] | null }>;
+            } & Promise<{ data: Record<string, unknown>[] | null }>;
+          };
+        };
+      })
+        .select(field)
         .gte("created_at", iso(from))
         .lt("created_at", iso(to));
-      if (status) q = q.eq("status", status);
-      const { data: rows } = await q;
+      if (status) q = q.eq("status", status) as never;
+      const { data: rows } = await (q as unknown as Promise<{ data: Record<string, unknown>[] | null }>);
       return (rows ?? []).reduce((acc: number, r: Record<string, unknown>) => acc + Number(r[field] ?? 0), 0);
     };
 
@@ -202,7 +209,7 @@ export const getDashboardStats = createServerFn({ method: "POST" })
         .eq("status", "Successful")
         .gte("created_at", iso(start))
         .lt("created_at", iso(end))
-        .then((r) => (r.data ?? []).reduce((a: number, x: { bonus_amount: number | null }) => a + Number(x.bonus_amount ?? 0), 0)),
+        .then((r) => ((r.data ?? []) as Array<{ bonus_amount: number | null }>).reduce((a, x) => a + Number(x.bonus_amount ?? 0), 0)),
       countRows("withdrawals", { eq: ["status", "Pending"] }),
       countRows("deposits", { eq: ["status", "Pending"] }),
       supabaseAdmin
@@ -230,14 +237,14 @@ export const getDashboardStats = createServerFn({ method: "POST" })
         .limit(5),
     ]);
 
-    const betRows = (betsRes.data ?? []) as { stake: number; win_amount: number }[];
+    const betRows = ((betsRes as { data: Array<{ stake: number; win_amount: number }> | null }).data ?? []);
     const totalBet = betRows.reduce((a, r) => a + Number(r.stake ?? 0), 0);
     const totalPayout = betRows.reduce((a, r) => a + Number(r.win_amount ?? 0), 0);
-    const prevBetRows = (betsPrevRes.data ?? []) as { stake: number }[];
+    const prevBetRows = ((betsPrevRes as { data: Array<{ stake: number }> | null }).data ?? []);
     const totalBetPrev = prevBetRows.reduce((a, r) => a + Number(r.stake ?? 0), 0);
     const houseWin = totalBet - totalPayout;
     const rtp = totalBet > 0 ? (totalPayout / totalBet) * 100 : null;
-    const walletTotal = ((walletsRes.data ?? []) as { coins: number }[]).reduce(
+    const walletTotal = (((walletsRes as { data: Array<{ coins: number }> | null }).data ?? [])).reduce(
       (a, r) => a + Number(r.coins ?? 0),
       0,
     );
