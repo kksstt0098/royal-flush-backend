@@ -94,7 +94,12 @@ export const updateCustomRole = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const actor = context.userId;
     const actorNm = await actorName(context);
-    const patch: Record<string, unknown> = { updated_by: actor, updated_by_name: actorNm };
+    const patch: {
+      updated_by: string;
+      updated_by_name: string;
+      name?: string;
+      description?: string;
+    } = { updated_by: actor, updated_by_name: actorNm };
     if (typeof data.name === "string") patch.name = data.name.trim();
     if (typeof data.description === "string") patch.description = data.description;
     const { error } = await supabaseAdmin.from("custom_roles").update(patch).eq("id", data.id);
