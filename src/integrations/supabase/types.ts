@@ -379,6 +379,48 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_roles: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+        }
+        Relationships: []
+      }
       deposits: {
         Row: {
           account_no: string | null
@@ -1271,6 +1313,82 @@ export type Database = {
         }
         Relationships: []
       }
+      role_permissions: {
+        Row: {
+          access: Database["public"]["Enums"]["perm_access"]
+          created_at: string
+          id: string
+          permission_key: string
+          role_id: string
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string | null
+        }
+        Insert: {
+          access?: Database["public"]["Enums"]["perm_access"]
+          created_at?: string
+          id?: string
+          permission_key: string
+          role_id: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+        }
+        Update: {
+          access?: Database["public"]["Enums"]["perm_access"]
+          created_at?: string
+          id?: string
+          permission_key?: string
+          role_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "custom_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_role_assignments: {
+        Row: {
+          assigned_by: string | null
+          assigned_by_name: string | null
+          created_at: string
+          id: string
+          role_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          assigned_by_name?: string | null
+          created_at?: string
+          id?: string
+          role_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          assigned_by_name?: string | null
+          created_at?: string
+          id?: string
+          role_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_role_assignments_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "custom_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1652,6 +1770,7 @@ export type Database = {
       mail_recipient_type: "all_users" | "single_user" | "bulk_users" | "event"
       marquee_audience: "all" | "players" | "vip" | "new_users" | "staff"
       marquee_position: "top" | "bottom" | "both"
+      perm_access: "none" | "view" | "manage"
       player_status: "active" | "disabled"
       withdrawal_status:
         | "Pending"
@@ -1840,6 +1959,7 @@ export const Constants = {
       mail_recipient_type: ["all_users", "single_user", "bulk_users", "event"],
       marquee_audience: ["all", "players", "vip", "new_users", "staff"],
       marquee_position: ["top", "bottom", "both"],
+      perm_access: ["none", "view", "manage"],
       player_status: ["active", "disabled"],
       withdrawal_status: [
         "Pending",
