@@ -19,11 +19,9 @@ import { MarqueePage } from "@/components/admin/MarqueePage";
 import { CSConfigurePage } from "@/components/admin/CSConfigurePage";
 import { VipConfigPage } from "@/components/admin/VipConfigPage";
 import { LevelConfigPage } from "@/components/admin/LevelConfigPage";
-import {
-  RoleMgmtPage,
-  PermissionMgmtPage,
-  AdminLogsPage,
-} from "@/components/admin/SystemPages";
+import { AdminLogsPage } from "@/components/admin/SystemPages";
+import { RoleMgmtPage } from "@/components/admin/RoleMgmtPage";
+import { PermissionMgmtPage } from "@/components/admin/PermissionMgmtPage";
 import { LoginLogPage } from "@/components/admin/LoginLogPage";
 import { WhitelistPage } from "@/components/admin/WhitelistPage";
 import { AdminUserPage } from "@/components/admin/AdminUserPage";
