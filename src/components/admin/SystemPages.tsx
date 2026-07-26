@@ -15,12 +15,6 @@ function Placeholder({ titleKey, desc }: { titleKey: keyof typeof dict; desc: st
   );
 }
 
-export const RoleMgmtPage = () => (
-  <Placeholder titleKey="roleMgmt" desc="Manage admin roles and their scope." />
-);
-export const PermissionMgmtPage = () => (
-  <Placeholder titleKey="permissionMgmt" desc="Configure granular permissions per role." />
-);
 export const AdminLogsPage = () => (
   <Placeholder titleKey="adminLogs" desc="Audit trail of admin actions." />
 );
