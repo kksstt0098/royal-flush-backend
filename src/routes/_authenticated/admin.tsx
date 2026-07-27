@@ -4,6 +4,7 @@ import { LangProvider } from "@/lib/i18n";
 import { AdminShell, type PageKey } from "@/components/admin/AdminShell";
 import { DashboardPage } from "@/components/admin/DashboardPage";
 import { PlayerQueryPage } from "@/components/admin/PlayerQueryPage";
+import { OnlinePlayerPage } from "@/components/admin/OnlinePlayerPage";
 import { WithdrawalOrderPage } from "@/components/admin/WithdrawalOrderPage";
 import { ReviewWithdrawalPage } from "@/components/admin/ReviewWithdrawalPage";
 import { WithdrawalPaymentPage } from "@/components/admin/WithdrawalPaymentPage";
@@ -111,6 +112,8 @@ function AdminPage() {
           <DashboardPage onNavigate={(p) => navigateTo(p as PageKey)} />
         ) : active === "playerQuery" ? (
           <PlayerQueryPage />
+        ) : active === "onlinePlayers" ? (
+          <OnlinePlayerPage />
         ) : active === "withdrawalOrder" ? (
           <WithdrawalOrderPage />
         ) : active === "reviewWithdrawal" ? (
