@@ -47,6 +47,7 @@ export type PageKey =
   | "dashboard"
   | "playerQuery"
   | "onlinePlayers"
+  | "gameRecords"
   | "withdrawalOrder"
   | "reviewWithdrawal"
   | "withdrawalPayment"
@@ -87,7 +88,7 @@ const groups: NavGroup[] = [
     children: [
       { key: "playerQuery", page: "playerQuery" },
       { key: "onlinePlayers", page: "onlinePlayers" },
-      { key: "gameRecords" },
+      { key: "gameRecords", page: "gameRecords" },
       { key: "entryExitRecords" },
       { key: "accountLogs" },
       { key: "activeUserSearch" },
