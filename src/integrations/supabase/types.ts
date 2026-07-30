@@ -1092,6 +1092,81 @@ export type Database = {
         }
         Relationships: []
       }
+      player_login_logs: {
+        Row: {
+          agent: string | null
+          app_version: string | null
+          browser: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          device_id: string | null
+          device_name: string | null
+          device_type: string | null
+          failure_reason: string | null
+          id: string
+          ip_address: string | null
+          logged_in_at: string
+          logged_out_at: string | null
+          login_method: Database["public"]["Enums"]["player_login_method"]
+          os: string | null
+          player_id: string | null
+          remark: string
+          session_id: string | null
+          status: Database["public"]["Enums"]["player_login_status"]
+          username: string
+          vip_level: number | null
+        }
+        Insert: {
+          agent?: string | null
+          app_version?: string | null
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_id?: string | null
+          device_name?: string | null
+          device_type?: string | null
+          failure_reason?: string | null
+          id?: string
+          ip_address?: string | null
+          logged_in_at?: string
+          logged_out_at?: string | null
+          login_method?: Database["public"]["Enums"]["player_login_method"]
+          os?: string | null
+          player_id?: string | null
+          remark?: string
+          session_id?: string | null
+          status?: Database["public"]["Enums"]["player_login_status"]
+          username?: string
+          vip_level?: number | null
+        }
+        Update: {
+          agent?: string | null
+          app_version?: string | null
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_id?: string | null
+          device_name?: string | null
+          device_type?: string | null
+          failure_reason?: string | null
+          id?: string
+          ip_address?: string | null
+          logged_in_at?: string
+          logged_out_at?: string | null
+          login_method?: Database["public"]["Enums"]["player_login_method"]
+          os?: string | null
+          player_id?: string | null
+          remark?: string
+          session_id?: string | null
+          status?: Database["public"]["Enums"]["player_login_status"]
+          username?: string
+          vip_level?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           addr: string | null
@@ -1771,6 +1846,14 @@ export type Database = {
       marquee_audience: "all" | "players" | "vip" | "new_users" | "staff"
       marquee_position: "top" | "bottom" | "both"
       perm_access: "none" | "view" | "manage"
+      player_login_method:
+        | "password"
+        | "otp"
+        | "google"
+        | "apple"
+        | "facebook"
+        | "guest"
+      player_login_status: "success" | "failed" | "locked" | "logged_out"
       player_status: "active" | "disabled"
       withdrawal_status:
         | "Pending"
@@ -1960,6 +2043,15 @@ export const Constants = {
       marquee_audience: ["all", "players", "vip", "new_users", "staff"],
       marquee_position: ["top", "bottom", "both"],
       perm_access: ["none", "view", "manage"],
+      player_login_method: [
+        "password",
+        "otp",
+        "google",
+        "apple",
+        "facebook",
+        "guest",
+      ],
+      player_login_status: ["success", "failed", "locked", "logged_out"],
       player_status: ["active", "disabled"],
       withdrawal_status: [
         "Pending",

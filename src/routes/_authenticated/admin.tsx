@@ -7,6 +7,7 @@ import { PlayerQueryPage } from "@/components/admin/PlayerQueryPage";
 import { OnlinePlayerPage } from "@/components/admin/OnlinePlayerPage";
 import { GameRecordsPage } from "@/components/admin/GameRecordsPage";
 import { AccountLogsPage } from "@/components/admin/AccountLogsPage";
+import { PlayerLoginLogPage } from "@/components/admin/PlayerLoginLogPage";
 import { WithdrawalOrderPage } from "@/components/admin/WithdrawalOrderPage";
 import { ReviewWithdrawalPage } from "@/components/admin/ReviewWithdrawalPage";
 import { WithdrawalPaymentPage } from "@/components/admin/WithdrawalPaymentPage";
@@ -120,6 +121,8 @@ function AdminPage() {
           <GameRecordsPage />
         ) : active === "accountLogs" ? (
           <AccountLogsPage />
+        ) : active === "playerLoginLog" ? (
+          <PlayerLoginLogPage />
         ) : active === "withdrawalOrder" ? (
           <WithdrawalOrderPage />
         ) : active === "reviewWithdrawal" ? (
