@@ -127,11 +127,11 @@ export function PlayerLoginLogPage() {
     const from = (page - 1) * PAGE_SIZE;
     const { data, count, error } = await buildQuery("*", "exact").range(from, from + PAGE_SIZE - 1);
     if (error) toast.error(error.message);
-    setRows(((data ?? []) as unknown as Row[]) ?? []);
+    setRows((data ?? []) as unknown as Row[]);
     setTotal(count ?? 0);
 
     const { data: agg } = await buildQuery("status").limit(50000);
-    const list = ((agg ?? []) as unknown as { status: Status }[]) ?? [];
+    const list = (agg ?? []) as unknown as { status: Status }[];
     setStats({
       total: list.length,
       success: list.filter((r) => r.status === "success").length,
@@ -152,7 +152,7 @@ export function PlayerLoginLogPage() {
 
   const doExport = async () => {
     const { data } = await buildQuery("*").limit(50000);
-    const list = ((data ?? []) as unknown as Row[]) ?? [];
+    const list = (data ?? []) as unknown as Row[];
     if (list.length === 0) {
       toast.error("No records to export");
       return;
